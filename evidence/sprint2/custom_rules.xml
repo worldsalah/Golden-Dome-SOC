@@ -1,0 +1,68 @@
+<group name="fortigate,syslog,">
+
+<rule id="100100" level="8">
+    <if_group>fortigate</if_group>
+    <match>action="deny"</match>
+    <description>Fortigate: Blocked traffic detected</description>
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+</rule>
+
+<rule id="100101" level="12" frequency="5" timeframe="60">
+    <if_matched_sid>100100</if_matched_sid>
+    <same_srcip/>
+    <description>Fortigate: Multiple blocked connections from same source IP - Possible Port Scan</description>
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+</rule>
+
+<rule id="100102" level="12">
+    <if_group>fortigate</if_group>
+    <match>action="deny"</match>
+    <match>service="SSH|RDP|TELNET"</match>
+    <description>Fortigate: Sensitive service blocked</description>
+    <mitre>
+        <id>T1190</id>
+    </mitre>
+</rule>
+
+
+
+<rule id="100103" level="10">
+    <if_group>fortigate</if_group>
+    <match>service="DNS"</match>
+    <match>crlevel="high"</match>
+    <description>Fortigate: High risk DNS communication detected</description>
+    <mitre>
+        <id>T1071.004</id>
+    </mitre>
+</rule>
+
+
+<rule id="100104" level="11" frequency="10" timeframe="60">
+    <if_matched_sid>100100</if_matched_sid>
+    <same_srcip/>
+    <description>Fortigate: High volume blocked traffic from same host</description>
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+</rule>
+
+
+
+
+<rule id="100105" level="12" frequency="5" timeframe="60">
+    <if_matched_sid>100100</if_matched_sid>
+    <same_srcip/>
+    <description>
+    Fortigate: Multiple denied connections from same source IP - Possible Network Scan
+    </description>
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+</rule>
+
+
+</group>

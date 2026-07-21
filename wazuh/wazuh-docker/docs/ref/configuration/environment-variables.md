@@ -4,14 +4,11 @@ This document outlines the environment variables applicable to the Wazuh Docker 
 
 ## Table of Contents
 
-- [Environment Variables in Wazuh Docker Deployment](#environment-variables-in-wazuh-docker-deployment)
-  - [Table of Contents](#table-of-contents)
-  - [Wazuh Manager](#wazuh-manager)
-  - [Wazuh Indexer](#wazuh-indexer)
-  - [Wazuh Dashboard](#wazuh-dashboard)
-  - [Wazuh Agent](#wazuh-agent)
-  - [Overriding Configuration Files with Environment Variables](#overriding-configuration-files-with-environment-variables)
-    - [Examples:](#examples)
+- [Wazuh Manager](#wazuh-manager)
+- [Wazuh Indexer](#wazuh-indexer)
+- [Wazuh Dashboard](#wazuh-dashboard)
+- [Wazuh Agent](#wazuh-agent)
+- [Overriding Configuration Files with Environment Variables](#overriding-configuration-files-with-environment-variables)
 
 ---
 
@@ -26,6 +23,8 @@ environment:
   - WAZUH_API_URL=https://wazuh.manager
   - DASHBOARD_USERNAME=kibanaserver
   - DASHBOARD_PASSWORD=kibanaserver
+  - API_USERNAME=wazuh-wui
+  - API_PASSWORD=MyS3cr37P450r.*-
 ```
 
 **Variable Descriptions:**
@@ -33,6 +32,7 @@ environment:
 - `INDEXER_USERNAME` / `INDEXER_PASSWORD`: Credentials for accessing the Wazuh Indexer with `admin` user or a user with the same permissions.
 - `WAZUH_API_URL`: URL of the Wazuh API, used by other services for communication.
 - `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD`: Credentials for the Wazuh Dashboard to authenticate with the Indexer.
+- `API_USERNAME` / `API_PASSWORD`: Credentials for the Wazuh API user, utilized by the Dashboard for API interactions.
 
 ---
 
@@ -62,6 +62,8 @@ environment:
   - WAZUH_API_URL=https://wazuh.manager
   - DASHBOARD_USERNAME=kibanaserver
   - DASHBOARD_PASSWORD=kibanaserver
+  - API_USERNAME=wazuh-wui
+  - API_PASSWORD=MyS3cr37P450r.*-
 ```
 
 **Variable Descriptions:**
@@ -82,11 +84,14 @@ The Wazuh Agent container uses the following environment variables to dynamicall
 ```yaml
 environment:
   - WAZUH_MANAGER_SERVER=wazuh.manager
+  - WAZUH_MANAGER_PORT=1514
   - WAZUH_REGISTRATION_SERVER=wazuh.manager
+  - WAZUH_REGISTRATION_PORT=1515
   - WAZUH_AGENT_NAME=my-agent
+  - WAZUH_REGISTRATION_PASSWORD=StrongPassword
 ```
 
-These variables are used by the `set_manager_conn()` function in the entrypoint script to replace placeholder values in `ossec.conf`.
+These variables are used by the `set_manager_conn()` function in the entrypoint script to replace placeholder values in `ossec.conf` and set the enrollment password.
 
 ---
 

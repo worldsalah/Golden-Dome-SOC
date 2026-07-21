@@ -1,0 +1,130 @@
+<group name="fortigate,syslog,">
+
+
+<!-- Basic denied traffic detection -->
+
+<rule id="100100" level="7">
+    <if_group>fortigate</if_group>
+    <match>action="deny"</match>
+
+    <description>
+    FortiGate: Firewall denied connection detected
+    </description>
+
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+
+</rule>
+
+
+
+<!-- Multiple denied connections = reconnaissance -->
+
+<rule id="100101" level="12" frequency="5" timeframe="60">
+
+    <if_matched_sid>100100</if_matched_sid>
+
+    <same_srcip/>
+
+    <description>
+    FortiGate: Possible network reconnaissance - multiple denied connections from same source
+    </description>
+
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+
+</rule>
+
+
+
+<!-- Administrative service access attempt -->
+
+<rule id="100102" level="13">
+
+    <if_sid>100100</if_sid>
+
+    <match>service="SSH"</match>
+
+    <description>
+    FortiGate: Blocked SSH administrative access attempt
+    </description>
+
+    <mitre>
+        <id>T1190</id>
+    </mitre>
+
+</rule>
+
+
+
+<!-- DNS monitoring -->
+
+<rule id="100103" level="12">
+
+    <if_group>fortigate</if_group>
+
+    <match>service="DNS"</match>
+
+
+    <description>
+    FortiGate: DNS traffic requires investigation
+    </description>
+
+
+    <mitre>
+        <id>T1071.004</id>
+    </mitre>
+
+
+</rule>
+
+
+
+<!-- High volume blocked traffic -->
+
+<rule id="100104" level="12" frequency="10" timeframe="60">
+
+    <if_matched_sid>100100</if_matched_sid>
+
+    <same_srcip/>
+
+
+    <description>
+    FortiGate: High volume denied traffic from same source
+    </description>
+
+
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+
+
+</rule>
+
+
+
+<!-- Compromised host behavior -->
+
+<rule id="100105" level="14" frequency="20" timeframe="120">
+
+    <if_matched_sid>100100</if_matched_sid>
+
+    <same_srcip/>
+
+
+    <description>
+    FortiGate: Possible compromised host generating abnormal blocked traffic
+    </description>
+
+
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+
+
+</rule>
+
+
+</group>

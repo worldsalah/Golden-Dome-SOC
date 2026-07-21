@@ -1,0 +1,6 @@
+/var/ossec/etc/rules/local_rules.xml:<rule id="100100" level="7">
+/var/ossec/etc/rules/local_rules.xml:<rule id="100101" level="12" frequency="5" timeframe="60">
+/var/ossec/etc/rules/local_rules.xml:<rule id="100102" level="13">
+/var/ossec/etc/rules/local_rules.xml:<rule id="100103" level="12">
+/var/ossec/etc/rules/local_rules.xml:<rule id="100104" level="12" frequency="10" timeframe="60">
+/var/ossec/etc/rules/local_rules.xml:<rule id="100105" level="14" frequency="20" timeframe="120">

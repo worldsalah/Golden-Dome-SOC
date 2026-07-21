@@ -4,7 +4,7 @@
 # Variables
 source /permanent_data.env
 
-WAZUH_INSTALL_PATH=/var/wazuh-manager
+WAZUH_INSTALL_PATH=/var/ossec
 DATA_TMP_PATH=${WAZUH_INSTALL_PATH}/data_tmp
 mkdir ${DATA_TMP_PATH}
 

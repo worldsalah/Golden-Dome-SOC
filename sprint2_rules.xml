@@ -1,0 +1,150 @@
+<group name="fortigate,syslog,">
+
+
+<!-- RULE 100100 -->
+<!-- Basic firewall deny detection -->
+
+<rule id="100100" level="7">
+    <if_group>fortigate</if_group>
+    <match>action="deny"</match>
+    <description>
+    FortiGate: Firewall denied connection detected
+    </description>
+
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+
+</rule>
+
+
+
+<!-- RULE 100101 -->
+<!-- Port scan detection -->
+
+<rule id="100101" level="12" frequency="5" timeframe="60">
+
+    <if_matched_sid>100100</if_matched_sid>
+
+    <same_srcip/>
+
+    <description>
+    FortiGate: Possible network reconnaissance - multiple denied connections from same source
+    </description>
+
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+
+</rule>
+
+
+
+<!-- RULE 100102 -->
+<!-- Sensitive services -->
+
+<rule id="100102" level="13">
+
+    <if_group>fortigate</if_group>
+
+    <match>action="deny"</match>
+
+    <match>service="SSH|RDP|TELNET"</match>
+
+
+    <description>
+    FortiGate: Blocked access attempt to sensitive administrative service
+    </description>
+
+
+    <mitre>
+        <id>T1190</id>
+    </mitre>
+
+
+</rule>
+
+
+
+
+<!-- RULE 100103 -->
+<!-- Suspicious DNS -->
+
+<rule id="100103" level="12">
+
+    <if_group>fortigate</if_group>
+
+    <match>service="DNS"</match>
+
+    <description>
+    FortiGate: DNS traffic detected - requires investigation
+    </description>
+
+
+    <mitre>
+        <id>T1071.004</id>
+    </mitre>
+
+
+</rule>
+
+
+
+
+<!-- RULE 100104 -->
+<!-- High volume blocked traffic -->
+
+<rule id="100104" level="12" frequency="10" timeframe="60">
+
+
+    <if_matched_sid>100100</if_matched_sid>
+
+    <same_srcip/>
+
+
+    <description>
+    FortiGate: High volume denied traffic from same source - possible malicious activity
+    </description>
+
+
+    <mitre>
+        <id>T1046</id>
+    </mitre>
+
+
+</rule>
+
+
+
+
+
+<!-- RULE 100105 -->
+<!-- Hotel guest network abuse detection -->
+
+
+<rule id="100105" level="14" frequency="20" timeframe="120">
+
+
+    <if_matched_sid>100100</if_matched_sid>
+
+
+    <same_srcip/>
+
+
+    <description>
+    FortiGate: Possible compromised host generating abnormal blocked traffic
+    </description>
+
+
+    <mitre>
+
+        <id>T1046</id>
+
+    </mitre>
+
+
+</rule>
+
+
+
+</group>
