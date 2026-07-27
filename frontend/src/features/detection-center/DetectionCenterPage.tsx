@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { DataGrid, GridColDef } from '@mui/x-data-grid'
+import { DataWorkspace, DataWorkspaceColumn } from '@/components/DataWorkspace'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -145,8 +145,8 @@ export function DetectionCenterPage() {
     }
   }
 
-  const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Rule', flex: 1.5, renderCell: (params) => <span className="font-medium text-gray-200">{params.value}</span> },
+  const columns: DataWorkspaceColumn<DetectionRule>[] = [
+    { field: 'name', headerName: 'Rule', flex: 1.5, renderCell: (params) => <span className="font-medium text-gray-200">{String(params.value)}</span> },
     { field: 'category', headerName: 'Category', flex: 1 },
     { field: 'source', headerName: 'Source', flex: 0.8 },
     { field: 'severity', headerName: 'Severity', flex: 0.6, renderCell: (params) => <SeverityBadge severity={params.value as number} /> },
@@ -157,7 +157,7 @@ export function DetectionCenterPage() {
       flex: 0.8,
       renderCell: (params) => (
         <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_STYLES[params.value as string] || STATUS_STYLES.draft}`}>
-          {params.value}
+          {String(params.value)}
         </span>
       ),
     },
@@ -225,21 +225,8 @@ export function DetectionCenterPage() {
       </div>
 
       <ChartCard title="Detection Rules" right={<button onClick={openCreate} className="flex items-center gap-1 rounded-md bg-cyan-600 px-3 py-1.5 text-sm text-white hover:bg-cyan-500"><Plus className="h-4 w-4" /> New Rule</button>}>
-        <div className="mt-2 h-[420px]">
-          <DataGrid
-            rows={rules}
-            columns={columns}
-            pageSizeOptions={[10, 25, 50]}
-            initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
-            sx={{
-              border: 'none',
-              '& .MuiDataGrid-root': { borderColor: '#374151' },
-              '& .MuiDataGrid-cell': { borderBottom: '1px solid #374151', color: '#e5e7eb' },
-              '& .MuiDataGrid-columnHeaders': { backgroundColor: '#111827', borderBottom: '1px solid #374151', color: '#9ca3af' },
-              '& .MuiDataGrid-row:hover': { backgroundColor: '#1f2937' },
-              '& .MuiDataGrid-footerContainer': { backgroundColor: '#111827', color: '#9ca3af' },
-            }}
-          />
+        <div className="mt-2 max-h-[520px]">
+          <DataWorkspace rows={rules} columns={columns} />
         </div>
       </ChartCard>
 

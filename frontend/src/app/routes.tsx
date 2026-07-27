@@ -4,8 +4,9 @@ import { MainLayout } from '@/layouts/MainLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 import { LoginPage } from '@/features/authentication/LoginPage'
+import { ExperiencePage } from '@/features/experience/ExperiencePage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
-import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { CommandCenterPage } from '@/features/dashboard/CommandCenterPage'
 import { AlertsPage } from '@/features/alerts/AlertsPage'
 import { AlertDetailsPage } from '@/features/alerts/AlertDetailsPage'
 import { IncidentsPage } from '@/features/incidents/IncidentsPage'
@@ -25,10 +26,11 @@ import { SettingsPage } from '@/features/settings/SettingsPage'
 export function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<ExperiencePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="workspace" element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<CommandCenterPage />} />
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="alerts/:id" element={<AlertDetailsPage />} />
         <Route path="detection-center" element={<DetectionCenterPage />} />

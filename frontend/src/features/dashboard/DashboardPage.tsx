@@ -18,7 +18,7 @@ import {
 import { AnimatedCard } from '@/components/AnimatedCard'
 import { ChartCard } from '@/components/ChartCard'
 import { PageHeader } from '@/components/PageHeader'
-import { EnterpriseAttackMap } from '@/components/EnterpriseAttackMap'
+import { ThreatGlobe } from '@/components/ThreatGlobe'
 import apiClient from '@/services/api'
 import { Alert, Asset, Incident } from '@/types'
 
@@ -239,7 +239,10 @@ export function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <EnterpriseAttackMap />
+          <div className="relative h-[480px] overflow-hidden border border-white/[0.08] bg-[#090a0b]">
+            <div className="absolute left-5 top-5 z-10"><p className="eyebrow">Global attack telemetry</p><h2 className="mt-1 text-lg font-medium tracking-tight text-stone-100">Live threat activity</h2></div>
+            <ThreatGlobe />
+          </div>
         </div>
 
         <AnimatedCard className="enterprise-panel p-5">

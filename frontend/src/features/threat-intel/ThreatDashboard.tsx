@@ -11,6 +11,7 @@ import {
   Skull,
   Target,
   Zap,
+  type LucideIcon,
 } from 'lucide-react'
 import { ChartCard } from '@/components/ChartCard'
 import { getThreatDashboard } from '@/services/api'
@@ -23,7 +24,7 @@ function StatCard({
   value,
   color,
 }: {
-  icon: React.ElementType
+  icon: LucideIcon
   label: string
   value: string | number
   color: string
