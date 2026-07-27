@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Golden Dome SOC Custom Wazuh Rules
+  Covers authentication, endpoint, network, web, and malware detections.
+-->
+<group name="goldendome,security,">
+
+  <!-- Authentication Attacks -->
+  <rule id="200001" level="10" frequency="6" timeframe="300">
+    <if_matched_sid>5710</if_matched_sid>
+    <same_source_ip />
+    <description>GoldenDome: SSH brute force detected - multiple failed logins from same source</description>
+    <mitre>
+      <id>T1110</id>
+      <tactic>Credential Access</tactic>
+    </mitre>
+    <group>authentication,brute_force,</group>
+  </rule>
+
+  <rule id="200002" level="13" frequency="8" timeframe="300">
+    <if_matched_sid>60122</if_matched_sid>
+    <same_source_ip />
+    <description>GoldenDome: Windows failed login brute force detected</description>
+    <mitre>
+      <id>T1110</id>
+      <tactic>Credential Access</tactic>
+    </mitre>
+    <group>authentication,brute_force,</group>
+  </rule>
+
+  <rule id="200003" level="12" frequency="10" timeframe="300">
+    <if_matched_sid>5503</if_matched_sid>
+    <same_source_ip />
+    <description>GoldenDome: Password spraying - many failed logins against multiple accounts</description>
+    <mitre>
+      <id>T1110.003</id>
+      <tactic>Credential Access</tactic>
+    </mitre>
+    <group>authentication,password_spray,</group>
+  </rule>
+
+  <!-- Privilege Escalation -->
+  <rule id="200010" level="11">
+    <if_sid>5402</if_sid>
+    <description>GoldenDome: Suspicious sudo escalation on Linux host</description>
+    <mitre>
+      <id>T1548</id>
+      <tactic>Privilege Escalation</tactic>
+    </mitre>
+    <group>privilege_escalation,sudo,</group>
+  </rule>
+
+  <rule id="200011" level="12" frequency="3" timeframe="300">
+    <if_sid>60103</if_sid>
+    <same_source_ip />
+    <description>GoldenDome: New local administrator account created</description>
+    <mitre>
+      <id>T1136</id>
+      <tactic>Persistence</tactic>
+    </mitre>
+    <group>privilege_escalation,account_creation,</group>
+  </rule>
+
+  <!-- Execution -->
+  <rule id="200020" level="10">
+    <if_matched_sid>91801</if_matched_sid>
+    <description>GoldenDome: Suspicious PowerShell command execution</description>
+    <mitre>
+      <id>T1059.001</id>
+      <tactic>Execution</tactic>
+    </mitre>
+    <group>execution,powershell,</group>
+  </rule>
+
+  <rule id="200021" level="11">
+    <if_sid>554</if_sid>
+    <description>GoldenDome: Suspicious command shell execution</description>
+    <mitre>
+      <id>T1059.003</id>
+      <tactic>Execution</tactic>
+    </mitre>
+    <group>execution,shell,</group>
+  </rule>
+
+  <!-- Persistence -->
+  <rule id="200030" level="10">
+    <if_sid>1003</if_sid>
+    <description>GoldenDome: New scheduled task created on Windows</description>
+    <mitre>
+      <id>T1053.005</id>
+      <tactic>Persistence</tactic>
+    </mitre>
+    <group>persistence,scheduled_task,</group>
+  </rule>
+
+  <rule id="200031" level="10">
+    <if_sid>1002</if_sid>
+    <description>GoldenDome: Windows registry run key modified</description>
+    <mitre>
+      <id>T1547.001</id>
+      <tactic>Persistence</tactic>
+    </mitre>
+    <group>persistence,registry,</group>
+  </rule>
+
+  <!-- Network Attacks -->
+  <rule id="200040" level="12" frequency="20" timeframe="60">
+    <if_matched_sid>100100</if_matched_sid>
+    <same_source_ip />
+    <description>GoldenDome: Port scanning detected from single source</description>
+    <mitre>
+      <id>T1046</id>
+      <tactic>Discovery</tactic>
+    </mitre>
+    <group>network,port_scan,</group>
+  </rule>
+
+  <rule id="200041" level="10">
+    <if_group>fortigate</if_group>
+    <match>action="deny"</match>
+    <description>GoldenDome: FortiGate deny event - suspicious outbound connection</description>
+    <mitre>
+      <id>T1016</id>
+      <tactic>Discovery</tactic>
+    </mitre>
+    <group>network,outbound,</group>
+  </rule>
+
+  <rule id="200042" level="13" frequency="50" timeframe="300">
+    <if_matched_sid>100103</if_matched_sid>
+    <same_source_ip />
+    <description>GoldenDome: Possible DNS tunneling - high volume DNS queries</description>
+    <mitre>
+      <id>T1071.004</id>
+      <tactic>Command and Control</tactic>
+    </mitre>
+    <group>network,dns_tunneling,</group>
+  </rule>
+
+  <!-- Lateral Movement -->
+  <rule id="200050" level="12">
+    <if_group>fortigate</if_group>
+    <match>service="RDP"</match>
+    <description>GoldenDome: RDP connection attempt to sensitive segment</description>
+    <mitre>
+      <id>T1021.001</id>
+      <tactic>Lateral Movement</tactic>
+    </mitre>
+    <group>lateral_movement,rdp,</group>
+  </rule>
+
+  <rule id="200051" level="13">
+    <if_sid>60108</if_sid>
+    <description>GoldenDome: Suspicious SMB activity detected</description>
+    <mitre>
+      <id>T1021.002</id>
+      <tactic>Lateral Movement</tactic>
+    </mitre>
+    <group>lateral_movement,smb,</group>
+  </rule>
+
+  <!-- Malware -->
+  <rule id="200060" level="12">
+    <if_matched_sid>100200</if_matched_sid>
+    <description>GoldenDome: Known malicious hash detected</description>
+    <mitre>
+      <id>T1204</id>
+      <tactic>Execution</tactic>
+    </mitre>
+    <group>malware,hash,</group>
+  </rule>
+
+  <rule id="200061" level="11">
+    <if_sid>554</if_sid>
+    <match>\.exe|\.dll|\.ps1|\.bat</match>
+    <description>GoldenDome: Suspicious binary or script execution</description>
+    <mitre>
+      <id>T1105</id>
+      <tactic>Command and Control</tactic>
+    </mitre>
+    <group>malware,binary,</group>
+  </rule>
+
+  <!-- Web Security -->
+  <rule id="200070" level="10" frequency="8" timeframe="60">
+    <if_sid>31503</if_sid>
+    <same_source_ip />
+    <description>GoldenDome: Possible SQL injection attempt detected</description>
+    <mitre>
+      <id>T1190</id>
+      <tactic>Initial Access</tactic>
+    </mitre>
+    <group>web,sql_injection,</group>
+  </rule>
+
+  <rule id="200071" level="10" frequency="5" timeframe="60">
+    <if_sid>31101</if_sid>
+    <same_source_ip />
+    <description>GoldenDome: Directory traversal attempt detected</description>
+    <mitre>
+      <id>T1190</id>
+      <tactic>Initial Access</tactic>
+    </mitre>
+    <group>web,directory_traversal,</group>
+  </rule>
+
+  <rule id="200072" level="13">
+    <if_sid>31501</if_sid>
+    <match>cmd=|eval|base64|powershell</match>
+    <description>GoldenDome: Possible web shell execution detected</description>
+    <mitre>
+      <id>T1505.003</id>
+      <tactic>Persistence</tactic>
+    </mitre>
+    <group>web,webshell,</group>
+  </rule>
+
+</group>

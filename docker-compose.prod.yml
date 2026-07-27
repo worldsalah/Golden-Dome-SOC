@@ -1,0 +1,25 @@
+services:
+  gateway:
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+  backend:
+    environment:
+      DEBUG: "false"
+      ENVIRONMENT: production
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+  db:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+  ollama:
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G

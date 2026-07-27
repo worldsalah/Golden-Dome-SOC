@@ -1,8 +1,37 @@
 # 🛡️ Golden Dome SOC Platform
 
+[![RC1](https://img.shields.io/badge/release-RC1-0ea5e9)](CHANGELOG.md)
+[![Docker Compose](https://img.shields.io/badge/deployment-Docker%20Compose-2496ed)](docs/DEPLOYMENT.md)
+[![License](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
+
 ## Overview
 
-Golden Dome is a Security Operations Center (SOC) engineering project designed to centralize security monitoring, threat detection and incident response.
+Golden Dome is a containerized Security Operations Center (SOC) platform for security monitoring, threat detection, incident response, threat intelligence, AI-assisted analysis, and SOAR automation.
+
+## Quick Start
+
+```bash
+cp .env.example .env
+./scripts/install.sh
+```
+
+Open `http://localhost:8080` and sign in using `ADMIN_USERNAME` and `ADMIN_PASSWORD` from `.env`. The command builds and starts the frontend, FastAPI backend, PostgreSQL, Redis, Ollama, reverse proxy, schema migration, demo seed, and health verification.
+
+- **[Installation](docs/INSTALLATION.md)**
+- **[Production deployment and recovery](docs/DEPLOYMENT.md)**
+- **[Architecture](docs/ARCHITECTURE.md)**
+- **[Environment variables](docs/ENVIRONMENT.md)**
+- **[Developer guide](docs/DEVELOPMENT.md)**
+
+## Product Capabilities
+
+- **Security operations**: alerts, assets, incidents, detection rules, MITRE mapping, risk scoring, reports, and timeline evidence.
+- **AI-assisted analysis**: local Ollama integration, guarded analyst chat, RAG-backed investigation context, fallback analysis, and structured recommendations.
+- **Threat intelligence**: IOC enrichment and vulnerability context from configured providers.
+- **SOAR**: visual node workflow builder, approval gates, retry-aware actions, alert triggers, evidence collection, playbook import/export, and notifications.
+- **Enterprise operations**: production Compose stack, migrations, health checks, CI, backup/recovery, security assessment, and RC1 quality artifacts.
+
+See the [architecture diagrams](docs/ARCHITECTURE_DIAGRAMS.md), [user manual](docs/USER_MANUAL.md), [demo scenarios](docs/DEMO_SCENARIOS.md), [security assessment](docs/SECURITY_ASSESSMENT_RC1.md), [QA report](docs/QA_REPORT_RC1.md), and [RC1 release audit](docs/RELEASE_AUDIT_RC1.md).
 
 The platform integrates:
 

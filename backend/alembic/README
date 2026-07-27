@@ -1,0 +1,4 @@
+Generic single-database configuration with an async dbapi.
+
+Run `alembic revision --autogenerate -m "init"` after the database is running.
+Run `alembic upgrade head` to apply migrations.

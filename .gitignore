@@ -1,0 +1,16 @@
+.env
+.env.local
+*.pem
+*.key
+*.crt
+logs/
+backups/
+backend/*.db
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+backend/.venv/
+__pycache__/
+.pytest_cache/

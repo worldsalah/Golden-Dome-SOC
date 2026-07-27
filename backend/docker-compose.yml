@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: goldendome-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: goldendome
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - goldendome
+
+  redis:
+    image: redis:7-alpine
+    container_name: goldendome-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - goldendome
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: goldendome-backend
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/goldendome
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - goldendome
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  goldendome:
+    driver: bridge
