@@ -72,7 +72,7 @@ export function MainLayout() {
       >
         <div className="flex h-16 items-center justify-between px-4 border-b border-gray-800">
           {sidebarOpen && (
-            <Link to="/dashboard" className="flex items-center gap-2 text-cyan-400">
+            <Link to="/dashboard" className="flex items-center gap-2 text-slate-100">
               <Shield className="h-6 w-6" />
               <span className="font-bold text-lg tracking-tight">Golden Dome</span>
             </Link>
@@ -95,8 +95,8 @@ export function MainLayout() {
                     to={item.path}
                     className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                       active
-                        ? 'bg-cyan-500/10 text-cyan-400'
-                        : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                        ? 'bg-emerald-500/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/20'
+                        : 'text-gray-400 hover:bg-white/[0.04] hover:text-white'
                     }`}
                   >
                     <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -199,7 +199,7 @@ export function MainLayout() {
                 onClick={() => setProfileOpen((v) => !v)}
                 className="flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-gray-200 hover:border-gray-600"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-600 text-xs font-semibold text-white">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-xs font-semibold text-white">
                   {user?.username?.charAt(0).toUpperCase() || 'A'}
                 </div>
                 <span className="hidden lg:inline">{user?.username || 'Analyst'}</span>

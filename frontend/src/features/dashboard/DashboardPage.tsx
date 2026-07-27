@@ -18,7 +18,7 @@ import {
 import { AnimatedCard } from '@/components/AnimatedCard'
 import { ChartCard } from '@/components/ChartCard'
 import { PageHeader } from '@/components/PageHeader'
-import { AttackMap } from '@/components/AttackMap'
+import { EnterpriseAttackMap } from '@/components/EnterpriseAttackMap'
 import apiClient from '@/services/api'
 import { Alert, Asset, Incident } from '@/types'
 
@@ -75,7 +75,7 @@ function KpiCard({
       variants={item}
       transition={{ delay }}
       whileHover={{ y: -4, boxShadow: `0 0 24px ${color}22` }}
-      className="relative overflow-hidden rounded-xl border border-gray-800 bg-soc-panel/80 p-5 backdrop-blur-sm"
+      className="enterprise-panel relative overflow-hidden p-5"
     >
       <div className="absolute right-0 top-0 h-24 w-24 -translate-y-6 translate-x-6 rounded-full opacity-10" style={{ background: color }} />
       <div className="flex items-center justify-between">
@@ -238,20 +238,11 @@ export function DashboardPage() {
       </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <AnimatedCard className="lg:col-span-2 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-200">Global Threat Map</h3>
-            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              Live
-            </span>
-          </div>
-          <div className="h-[320px]">
-            <AttackMap />
-          </div>
-        </AnimatedCard>
+        <div className="lg:col-span-2">
+          <EnterpriseAttackMap />
+        </div>
 
-        <AnimatedCard className="p-4">
+        <AnimatedCard className="enterprise-panel p-5">
           <h3 className="mb-4 text-sm font-semibold text-gray-200">Attack Timeline</h3>
           <div className="relative space-y-5 pl-4">
             <div className="absolute bottom-0 left-[19px] top-2 w-px bg-gray-800" />
