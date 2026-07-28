@@ -89,3 +89,54 @@ class WazuhAlertsClient:
             must.append({"term": {"rule.id": rule_id}})
         query = {"bool": {"must": must}} if must else {"match_all": {}}
         return await self.query("wazuh-alerts-*,wazuh-archives-*", size=size, query=query)
+
+    async def get_rule_stats(
+        self,
+        rule_ids: list[str] | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
+    ) -> dict[str, dict[str, Any]]:
+        """Aggregate real alert volume and last-trigger time per rule ID from the indexer."""
+        client = self._get_client()
+        must: list[dict[str, Any]] = []
+        if rule_ids:
+            must.append({"terms": {"rule.id": rule_ids}})
+        if start_time or end_time:
+            range_clause: dict[str, str] = {}
+            if start_time:
+                range_clause["gte"] = start_time
+            if end_time:
+                range_clause["lte"] = end_time
+            must.append({"range": {"timestamp": range_clause}})
+
+        body = {
+            "size": 0,
+            "query": {"bool": {"must": must}} if must else {"match_all": {}},
+            "aggs": {
+                "by_rule": {
+                    "terms": {"field": "rule.id", "size": 1000},
+                    "aggs": {
+                        "last_trigger": {"max": {"field": "timestamp"}},
+                        "avg_level": {"avg": {"field": "rule.level"}},
+                    },
+                }
+            },
+        }
+        try:
+            response = await asyncio.to_thread(
+                client.search, index="wazuh-alerts-*", body=body
+            )
+        except OpenSearchException as exc:
+            logger.error("OpenSearch rule-stats aggregation failed: %s", exc)
+            raise WazuhAlertsClientError("OpenSearch aggregation failed") from exc
+
+        buckets = response.get("aggregations", {}).get("by_rule", {}).get("buckets", [])
+        stats: dict[str, dict[str, Any]] = {}
+        for bucket in buckets:
+            rid = str(bucket.get("key"))
+            stats[rid] = {
+                "alert_count": bucket.get("doc_count", 0),
+                "last_trigger": bucket.get("last_trigger", {}).get("value_as_string"),
+                "avg_level": bucket.get("avg_level", {}).get("value"),
+            }
+        return stats

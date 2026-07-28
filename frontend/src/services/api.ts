@@ -408,6 +408,40 @@ export async function getWazuhVulnerabilities(params?: { agent_id?: string; page
   return data as { data: { id?: string; cve?: string; cvss3_score?: number; severity?: string; package_name?: string; architecture?: string; version?: string; condition?: string; title?: string }[] }
 }
 
+// Detection Validation Center
+export interface DetectionValidationEntry {
+  rule_id: string
+  detection_name: string
+  mitre_technique: string | null
+  severity: number
+  alert_count: number
+  last_trigger: string | null
+  status: string
+  validation_status: 'validated' | 'pending' | 'stale' | 'failed' | 'no_data'
+  coverage_percentage: number
+  false_positive_rate: number | null
+  false_positive_sample_size: number
+  detection_confidence: number
+  groups: string[]
+}
+
+export interface ValidationSummary {
+  total_detections: number
+  validated: number
+  pending: number
+  no_data: number
+  avg_false_positive_rate: number | null
+  avg_confidence: number
+  total_alerts_observed: number
+  data_source: string
+  generated_at: string
+}
+
+export async function getValidationCenter(group = 'goldendome') {
+  const { data } = await apiClient.get('/validation/detections', { params: { group } })
+  return data as { summary: ValidationSummary; detections: DetectionValidationEntry[] }
+}
+
 // Detection Rules
 export async function listDetectionRules(params?: { page?: number; limit?: number; category?: string; status?: string; search?: string }) {
   const { data } = await apiClient.get('/detection-rules', { params })

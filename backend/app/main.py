@@ -9,7 +9,7 @@ from sqlalchemy import text
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.api import ai, alerts, assets, auth, detection_rules, incidents, mitre, reports, risk, soar, threat, threat_intel, users, wazuh
+from app.api import ai, alerts, assets, auth, detection_rules, incidents, mitre, reports, risk, soar, threat, threat_intel, users, validation, wazuh
 from app.config.settings import get_settings
 from app.database.database import AsyncSessionLocal, Base, engine
 from app.utils.logging import setup_logging
@@ -79,6 +79,7 @@ def create_application() -> FastAPI:
     app.include_router(detection_rules.router, prefix="/api")
     app.include_router(wazuh.router, prefix="/api")
     app.include_router(soar.router, prefix="/api")
+    app.include_router(validation.router, prefix="/api")
 
     @app.get("/health", tags=["Health"])
     async def health_check():

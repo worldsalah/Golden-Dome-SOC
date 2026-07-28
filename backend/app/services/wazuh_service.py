@@ -6,6 +6,7 @@ from app.config.settings import get_settings
 from app.services.wazuh.agents import WazuhAgentsClient
 from app.services.wazuh.alerts import WazuhAlertsClient
 from app.services.wazuh.client import WazuhApiClient, WazuhApiClientError
+from app.services.wazuh.rules import WazuhRulesClient
 from app.services.wazuh.vulnerabilities import WazuhVulnerabilitiesClient
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class WazuhService:
         self.alerts_client = WazuhAlertsClient()
         self.agents_client = WazuhAgentsClient(self.api_client)
         self.vulnerabilities_client = WazuhVulnerabilitiesClient(self.api_client)
+        self.rules_client = WazuhRulesClient(self.api_client)
 
     async def _authenticate(self) -> str:
         """Backward-compatible wrapper for tests and legacy code."""
@@ -91,6 +93,33 @@ class WazuhService:
     ) -> list[dict[str, Any]]:
         try:
             return await self.alerts_client.get_security_events(size=size, rule_id=rule_id)
+        except Exception as exc:
+            raise WazuhServiceError(str(exc)) from exc
+
+    async def get_rules(
+        self,
+        limit: int = 500,
+        offset: int = 0,
+        group: str | None = None,
+        rule_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        try:
+            return await self.rules_client.list(
+                limit=limit, offset=offset, group=group, rule_ids=rule_ids
+            )
+        except WazuhApiClientError as exc:
+            raise WazuhServiceError(str(exc)) from exc
+
+    async def get_rule_stats(
+        self,
+        rule_ids: list[str] | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
+    ) -> dict[str, dict[str, Any]]:
+        try:
+            return await self.alerts_client.get_rule_stats(
+                rule_ids=rule_ids, start_time=start_time, end_time=end_time
+            )
         except Exception as exc:
             raise WazuhServiceError(str(exc)) from exc
 
