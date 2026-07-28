@@ -21,7 +21,7 @@ function classificationColor(classification: string) {
 
 function RiskCard({ title, score, classification }: { title: string; score: number; classification: string }) {
   return (
-    <div className="rounded-lg border border-gray-800 bg-soc-panel p-4">
+    <div className="rounded-lg border border-white/[0.07] bg-soc-panel p-4">
       <p className="text-xs text-gray-400">{title}</p>
       <div className="mt-2 flex items-end gap-3">
         <span className="text-3xl font-bold text-white">{score}</span>
@@ -29,7 +29,7 @@ function RiskCard({ title, score, classification }: { title: string; score: numb
           {classification.toUpperCase()}
         </span>
       </div>
-      <div className="mt-3 h-2 w-full rounded-full bg-gray-800">
+      <div className="mt-3 h-2 w-full rounded-full bg-[#1c1e22]">
         <div
           className={`h-2 rounded-full ${score > 75 ? 'bg-red-500' : score > 50 ? 'bg-orange-500' : score > 25 ? 'bg-yellow-500' : 'bg-emerald-500'}`}
           style={{ width: `${Math.min(score, 100)}%` }}
@@ -85,7 +85,7 @@ export function RiskCenterPage() {
           <select
             value={targetType}
             onChange={(e) => setTargetType(e.target.value as 'asset' | 'alert' | 'incident')}
-            className="rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+            className="rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
           >
             <option value="asset">Asset</option>
             <option value="alert">Alert</option>
@@ -97,12 +97,12 @@ export function RiskCenterPage() {
             onChange={(e) => setTargetId(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && calculate()}
             placeholder={`Enter ${targetType} ID...`}
-            className="flex-1 rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+            className="flex-1 rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
           />
           <button
             onClick={calculate}
             disabled={loading || !targetId}
-            className="flex items-center justify-center gap-2 rounded-md bg-cyan-600 px-4 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-md bg-[#7c5540] px-4 py-2 text-sm text-white hover:bg-[#8d6350] disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Calculate
@@ -111,9 +111,9 @@ export function RiskCenterPage() {
 
         {riskResult && (
           <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <div className="rounded-md border border-gray-700 bg-gray-900 p-4">
+            <div className="rounded-md border border-white/[0.1] bg-[#17181b] p-4">
               <div className="flex items-center gap-3">
-                <AlertTriangle className="h-8 w-8 text-cyan-400" />
+                <AlertTriangle className="h-8 w-8 text-[#d8b17a]" />
                 <div>
                   <p className="text-sm text-gray-400">{riskResult.target_type} #{riskResult.target_id}</p>
                   <p className="text-2xl font-bold text-white">{riskResult.score}/100</p>
@@ -123,7 +123,7 @@ export function RiskCenterPage() {
                 </span>
               </div>
             </div>
-            <div className="rounded-md border border-gray-700 bg-gray-900 p-4">
+            <div className="rounded-md border border-white/[0.1] bg-[#17181b] p-4">
               <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Reasoning</h4>
               <ul className="space-y-1 text-sm text-gray-300">
                 {Object.entries(riskResult.reason).map(([key, value]) => (
@@ -141,19 +141,19 @@ export function RiskCenterPage() {
       <ChartCard title="Top Risky Assets">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-gray-800 text-gray-400">
+            <thead className="border-b border-white/[0.07] text-gray-400">
               <tr>
                 <th className="pb-2 font-medium">Hostname</th>
                 <th className="pb-2 font-medium">Risk Score</th>
                 <th className="pb-2 font-medium">Criticality</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800">
+            <tbody className="divide-y divide-white/[0.06]">
               {topLoading ? (
                 <tr><td colSpan={3} className="py-4 text-center text-gray-500">Loading...</td></tr>
               ) : topAssets?.data?.length ? (
                 topAssets.data.map((asset: { id: number; hostname: string; risk_score: number; criticality: number }) => (
-                  <tr key={asset.id} className="hover:bg-gray-800/30">
+                  <tr key={asset.id} className="hover:bg-white/[0.03]">
                     <td className="py-3 text-gray-200">{asset.hostname}</td>
                     <td className="py-3">
                       <span className="inline-flex items-center gap-2">

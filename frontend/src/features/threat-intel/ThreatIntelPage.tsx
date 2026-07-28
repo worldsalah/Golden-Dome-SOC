@@ -38,7 +38,7 @@ export function ThreatIntelPage() {
         subtitle="Investigate IOCs, correlate threats, and prioritize with transparent scoring."
       />
 
-      <div className="flex flex-wrap gap-2 border-b border-gray-800 pb-1">
+      <div className="flex flex-wrap gap-2 border-b border-white/[0.07] pb-1">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const active = activeTab === tab.path
@@ -48,7 +48,7 @@ export function ThreatIntelPage() {
               to={`/threat-intel/${tab.path}`}
               className={`flex items-center gap-2 rounded-t-md px-4 py-2 text-sm font-medium transition-colors ${
                 active
-                  ? 'border-b-2 border-cyan-500 text-cyan-400'
+                  ? 'border-b-2 border-[#c97848] text-[#d8b17a]'
                   : 'text-gray-400 hover:text-white'
               }`}
             >

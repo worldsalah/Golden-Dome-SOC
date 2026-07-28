@@ -13,17 +13,17 @@ interface ChartCardProps {
 
 export function ChartCard({ title, children, className = '', right, value, subtitle, icon: Icon }: ChartCardProps) {
   return (
-    <div className={`rounded-lg border border-gray-800 bg-soc-panel p-4 ${className}`}>
+    <div className={`enterprise-panel p-4 ${className}`}>
       <div className="mb-4 flex items-center justify-between">
-        {title && <h3 className="text-sm font-semibold text-gray-200">{title}</h3>}
+        {title && <h3 className="panel-title">{title}</h3>}
         {right}
       </div>
       {value !== undefined ? (
         <div className="flex items-center gap-3">
-          {Icon && <Icon className="h-8 w-8 text-cyan-400" />}
+          {Icon && <Icon className="h-7 w-7 text-[#d8b17a]" strokeWidth={1.5} />}
           <div>
-            <p className="text-2xl font-semibold text-white">{value}</p>
-            {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+            <p className="font-mono text-2xl font-medium tabular-nums text-stone-100">{value}</p>
+            {subtitle && <p className="text-xs text-stone-500">{subtitle}</p>}
           </div>
         </div>
       ) : (

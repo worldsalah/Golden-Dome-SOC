@@ -7,7 +7,7 @@ import { getThreatGraph } from '@/services/api'
 import ReactECharts from 'echarts-for-react'
 
 const groupColors: Record<string, string> = {
-  ioc: '#06b6d4',
+  ioc: '#c97848',
   campaign: '#8b5cf6',
   malware: '#ec4899',
   actor: '#f97316',

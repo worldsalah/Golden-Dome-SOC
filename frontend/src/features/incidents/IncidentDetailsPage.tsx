@@ -100,7 +100,7 @@ export function IncidentDetailsPage() {
               <select
                 value={incident.status}
                 onChange={(e) => updateMutation.mutate({ status: e.target.value as Incident['status'] })}
-                className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className="w-full rounded-md border border-white/[0.1] bg-[#17181b] px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
               >
                 {statusOptions.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
               </select>
@@ -110,7 +110,7 @@ export function IncidentDetailsPage() {
               <select
                 value={incident.severity}
                 onChange={(e) => updateMutation.mutate({ severity: e.target.value as Incident['severity'] })}
-                className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className="w-full rounded-md border border-white/[0.1] bg-[#17181b] px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
               >
                 {severityOptions.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -118,7 +118,7 @@ export function IncidentDetailsPage() {
             <button
               onClick={() => reportMutation.mutate()}
               disabled={reportMutation.isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-violet-600 py-2 text-sm text-white hover:bg-violet-500 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-[#6d5a96] py-2 text-sm text-white hover:bg-[#7d69ab] disabled:opacity-50"
             >
               {reportMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
               Generate Report
@@ -126,7 +126,7 @@ export function IncidentDetailsPage() {
             <button
               onClick={() => aiInvestigateMutation.mutate()}
               disabled={aiInvestigateMutation.isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-cyan-600 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-[#7c5540] py-2 text-sm text-white hover:bg-[#8d6350] disabled:opacity-50"
             >
               {aiInvestigateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               AI Investigation
@@ -137,7 +137,7 @@ export function IncidentDetailsPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard title="Timeline" className="lg:col-span-1">
-          <div className="space-y-4 border-l-2 border-gray-700 pl-4">
+          <div className="space-y-4 border-l-2 border-white/[0.1] pl-4">
             {timeline.length === 0 && <p className="text-sm text-gray-500">No timeline events.</p>}
             {timeline.map((event) => (
               <motion.div
@@ -146,12 +146,12 @@ export function IncidentDetailsPage() {
                 animate={{ opacity: 1, x: 0 }}
                 className="relative"
               >
-                <span className="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-cyan-500"></span>
+                <span className="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-[#c97848]"></span>
                 <div className="flex items-start gap-2">
                   {event.action === 'created' && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
                   {event.action === 'updated' && <StickyNote className="h-4 w-4 text-yellow-400" />}
                   {event.action === 'assigned' && <User className="h-4 w-4 text-violet-400" />}
-                  {event.action === 'note' && <MessageSquare className="h-4 w-4 text-cyan-400" />}
+                  {event.action === 'note' && <MessageSquare className="h-4 w-4 text-[#d8b17a]" />}
                   <div>
                     <p className="text-sm text-white">{event.note || event.action}</p>
                     <p className="text-xs text-gray-500">{formatDate(event.timestamp)}</p>
@@ -167,12 +167,12 @@ export function IncidentDetailsPage() {
               onChange={(e) => setNote(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && note && noteMutation.mutate(note)}
               placeholder="Add a note..."
-              className="flex-1 rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+              className="flex-1 rounded-md border border-white/[0.1] bg-[#17181b] px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
             />
             <button
               onClick={() => note && noteMutation.mutate(note)}
               disabled={!note || noteMutation.isPending}
-              className="rounded-md bg-cyan-600 px-3 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-50"
+              className="rounded-md bg-[#7c5540] px-3 py-2 text-sm text-white hover:bg-[#8d6350] disabled:opacity-50"
             >
               Add
             </button>
@@ -185,7 +185,7 @@ export function IncidentDetailsPage() {
           ) : (
             <div className="space-y-2">
               {alerts.map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between rounded-md bg-gray-900/50 p-3">
+                <div key={alert.id} className="flex items-center justify-between rounded-md bg-[#17181b]/50 p-3">
                   <div>
                     <p className="text-sm font-medium text-white">{alert.title}</p>
                     <p className="text-xs text-gray-500">Severity {alert.severity} • {alert.mitre_technique || 'No MITRE'}</p>
@@ -213,7 +213,7 @@ export function IncidentDetailsPage() {
                 {(['immediate', 'short_term', 'long_term'] as const).map((phase) => {
                   const rec = (aiReport.recommended_remediation as Record<string, string[]> | undefined)?.[phase] || []
                   return (
-                    <div key={phase} className="rounded-md border border-gray-700 bg-gray-900 p-3">
+                    <div key={phase} className="rounded-md border border-white/[0.1] bg-[#17181b] p-3">
                       <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{phase.replace('_', ' ')}</h4>
                       <ul className="list-disc space-y-1 pl-4 text-sm text-gray-300">{rec.map((item, i) => <li key={i}>{item}</li>)}</ul>
                     </div>
@@ -239,7 +239,7 @@ export function IncidentDetailsPage() {
                 a.click()
                 URL.revokeObjectURL(url)
               }}
-              className="flex items-center gap-1 rounded-md bg-gray-800 px-3 py-1 text-xs text-white hover:bg-gray-700"
+              className="flex items-center gap-1 rounded-md bg-[#1c1e22] px-3 py-1 text-xs text-white hover:bg-white/[0.08]"
             >
               <FileText className="h-3 w-3" /> Download MD
             </button>

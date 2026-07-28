@@ -34,7 +34,7 @@ export function MitrePage() {
       case 'planned':
         return 'bg-gray-700/50 border-gray-600 text-gray-400'
       default:
-        return 'bg-gray-800 border-gray-700 text-gray-500'
+        return 'bg-[#1c1e22] border-white/[0.1] text-gray-500'
     }
   }
 
@@ -43,19 +43,19 @@ export function MitrePage() {
       <PageHeader title="MITRE ATT&CK Matrix" subtitle="Interactive technique coverage and detection status" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border border-gray-800 bg-soc-panel p-4">
+        <div className="rounded-lg border border-white/[0.07] bg-soc-panel p-4">
           <p className="text-xs text-gray-500">Total Techniques</p>
           <p className="text-2xl font-bold text-white">{totalTechniques}</p>
         </div>
-        <div className="rounded-lg border border-gray-800 bg-soc-panel p-4">
+        <div className="rounded-lg border border-white/[0.07] bg-soc-panel p-4">
           <p className="text-xs text-gray-500">Detected / Partial</p>
           <p className="text-2xl font-bold text-emerald-400">{detectedTechniques}</p>
         </div>
-        <div className="rounded-lg border border-gray-800 bg-soc-panel p-4">
+        <div className="rounded-lg border border-white/[0.07] bg-soc-panel p-4">
           <p className="text-xs text-gray-500">Coverage</p>
-          <p className="text-2xl font-bold text-cyan-400">{coverage?.coverage_percentage || 0}%</p>
+          <p className="text-2xl font-bold text-[#d8b17a]">{coverage?.coverage_percentage || 0}%</p>
         </div>
-        <div className="rounded-lg border border-gray-800 bg-soc-panel p-4">
+        <div className="rounded-lg border border-white/[0.07] bg-soc-panel p-4">
           <p className="text-xs text-gray-500">Tactics</p>
           <p className="text-2xl font-bold text-white">{tactics.length}</p>
         </div>
@@ -71,7 +71,7 @@ export function MitrePage() {
             <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${tactics.length}, minmax(160px, 1fr))` }}>
               {tactics.map((tactic) => (
                 <div key={tactic} className="flex flex-col gap-2">
-                  <h3 className="text-center text-xs font-semibold uppercase tracking-wide text-cyan-400">{tactic}</h3>
+                  <h3 className="text-center text-xs font-semibold uppercase tracking-wide text-[#d8b17a]">{tactic}</h3>
                   {(matrix[tactic] || []).map((tech) => (
                     <motion.button
                       key={tech.technique_id}
@@ -97,10 +97,10 @@ export function MitrePage() {
 
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md rounded-xl border border-white/[0.1] bg-[#17181b] p-6 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-cyan-400">{selected.tactic}</p>
+                <p className="text-xs text-[#d8b17a]">{selected.tactic}</p>
                 <h3 className="text-lg font-semibold text-white">{selected.tech.technique_id} — {selected.tech.name}</h3>
               </div>
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>

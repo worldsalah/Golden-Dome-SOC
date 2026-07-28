@@ -62,12 +62,12 @@ export function ReportsPage() {
               onChange={(e) => setIncidentId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && generate()}
               placeholder="Incident ID..."
-              className="flex-1 rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+              className="flex-1 rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
             />
             <button
               onClick={generate}
               disabled={generating || !incidentId}
-              className="flex items-center gap-2 rounded-md bg-cyan-600 px-4 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-[#7c5540] px-4 py-2 text-sm text-white hover:bg-[#8d6350] disabled:opacity-50"
             >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </button>
@@ -87,10 +87,10 @@ export function ReportsPage() {
                   key={report.id}
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between rounded-md border border-gray-800 bg-gray-900/50 p-3"
+                  className="flex items-center justify-between rounded-md border border-white/[0.07] bg-[#17181b]/50 p-3"
                 >
                   <div className="flex items-center gap-3">
-                    <FileText className="h-6 w-6 text-cyan-400" />
+                    <FileText className="h-6 w-6 text-[#d8b17a]" />
                     <div>
                       <p className="text-sm font-medium text-white">{report.title}</p>
                       <p className="text-xs text-gray-500 capitalize">{report.report_type} • {formatDate(report.created_at)}</p>
@@ -102,7 +102,7 @@ export function ReportsPage() {
                         const r = { ...report, markdown: report.content || '', generated_at: report.created_at, report: { summary: report.content } } as unknown as IncidentReport
                         downloadMarkdown(r)
                       }}
-                      className="rounded-md border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white hover:bg-gray-700"
+                      className="rounded-md border border-white/[0.1] bg-[#1c1e22] px-3 py-1.5 text-xs text-white hover:bg-white/[0.08]"
                     >
                       Download
                     </button>
@@ -119,7 +119,7 @@ export function ReportsPage() {
         <ChartCard title="Generated Report Preview">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs text-gray-500">Generated at {new Date(selectedReport.generated_at).toLocaleString()}</p>
-            <button onClick={() => downloadMarkdown(selectedReport)} className="rounded-md bg-gray-800 px-3 py-1.5 text-xs text-white hover:bg-gray-700">Download Markdown</button>
+            <button onClick={() => downloadMarkdown(selectedReport)} className="rounded-md bg-[#1c1e22] px-3 py-1.5 text-xs text-white hover:bg-white/[0.08]">Download Markdown</button>
           </div>
           <pre className="max-h-[500px] overflow-auto rounded-md bg-gray-950 p-4 text-xs text-gray-300 font-mono whitespace-pre-wrap">
             {selectedReport.markdown}

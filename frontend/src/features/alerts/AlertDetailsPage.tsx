@@ -80,7 +80,7 @@ export function AlertDetailsPage() {
             </div>
             <div>
               <p className="text-xs text-gray-500">MITRE Technique</p>
-              <p className="font-mono text-cyan-300">{alert.mitre_technique || '—'}</p>
+              <p className="font-mono text-[#e2c495]">{alert.mitre_technique || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Wazuh Alert ID</p>
@@ -98,7 +98,7 @@ export function AlertDetailsPage() {
             <button
               onClick={() => enrichMutation.mutate(false)}
               disabled={enrichMutation.isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-cyan-600 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-[#7c5540] py-2 text-sm text-white hover:bg-[#8d6350] disabled:opacity-50"
             >
               {enrichMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Enrich Alert
@@ -106,14 +106,14 @@ export function AlertDetailsPage() {
             <button
               onClick={() => enrichMutation.mutate(true)}
               disabled={enrichMutation.isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-md border border-cyan-600 py-2 text-sm text-cyan-400 hover:bg-cyan-900/20 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-[#b98947]/50 py-2 text-sm text-[#d8b17a] hover:bg-[#2a2320] disabled:opacity-50"
             >
               Enrich + Create Incident
             </button>
             <button
               onClick={() => analyzeMutation.mutate()}
               disabled={analyzeMutation.isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-violet-600 py-2 text-sm text-white hover:bg-violet-500 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-[#6d5a96] py-2 text-sm text-white hover:bg-[#7d69ab] disabled:opacity-50"
             >
               {analyzeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
               AI Analysis
@@ -133,7 +133,7 @@ export function AlertDetailsPage() {
           <ChartCard title="MITRE Enrichment" className="lg:col-span-1">
             {enrichment.mitre ? (
               <div className="space-y-2 text-sm text-gray-200">
-                <p><span className="text-cyan-400">{((enrichment.mitre as Record<string, unknown>).technique_id as string)}</span> — {(enrichment.mitre as Record<string, unknown>).name as string}</p>
+                <p><span className="text-[#d8b17a]">{((enrichment.mitre as Record<string, unknown>).technique_id as string)}</span> — {(enrichment.mitre as Record<string, unknown>).name as string}</p>
                 <p className="text-xs text-gray-400">Tactic: {(enrichment.mitre as Record<string, unknown>).tactic as string}</p>
                 <p className="text-xs text-gray-500">{(enrichment.mitre as Record<string, unknown>).description as string}</p>
               </div>
@@ -146,9 +146,9 @@ export function AlertDetailsPage() {
                 {(enrichment.threat_intelligence as unknown[]).map((ti: unknown, idx) => {
                   const intel = ti as { indicator: string; reputation_score: number; type: string }
                   return (
-                    <div key={idx} className="rounded-md bg-gray-900/50 p-2 text-sm">
+                    <div key={idx} className="rounded-md bg-[#17181b]/50 p-2 text-sm">
                       <div className="flex items-center gap-2">
-                        {intel.type === 'ip' ? <Globe className="h-3 w-3 text-cyan-400" /> : <LinkIcon className="h-3 w-3 text-cyan-400" />}
+                        {intel.type === 'ip' ? <Globe className="h-3 w-3 text-[#d8b17a]" /> : <LinkIcon className="h-3 w-3 text-[#d8b17a]" />}
                         <span className="font-mono text-gray-200">{intel.indicator}</span>
                       </div>
                       <p className="text-xs text-gray-500">Reputation {intel.reputation_score}/100</p>
@@ -172,7 +172,7 @@ export function AlertDetailsPage() {
           {(enrichment.incident as { id: number; name: string }) && (
             <ChartCard title="Auto-Generated Incident" className="lg:col-span-3">
               <div className="flex items-center gap-2 text-sm text-gray-200">
-                <StickyNote className="h-4 w-4 text-cyan-400" />
+                <StickyNote className="h-4 w-4 text-[#d8b17a]" />
                 Incident #{((enrichment.incident as { id: number }).id)} — {((enrichment.incident as { name: string }).name)}
               </div>
             </ChartCard>
@@ -194,7 +194,7 @@ export function AlertDetailsPage() {
             <div className="space-y-1 text-sm">
               <p><span className="text-gray-500">Tactic:</span> {aiAnalysis.mitre_mapping.tactic}</p>
               <p><span className="text-gray-500">Technique:</span> {aiAnalysis.mitre_mapping.technique}</p>
-              <p><span className="text-cyan-400">{aiAnalysis.mitre_mapping.technique_id}</span></p>
+              <p><span className="text-[#d8b17a]">{aiAnalysis.mitre_mapping.technique_id}</span></p>
             </div>
           </ChartCard>
           <ChartCard title="Recommended Response" className="lg:col-span-2">

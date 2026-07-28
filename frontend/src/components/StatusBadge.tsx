@@ -3,18 +3,18 @@ interface StatusBadgeProps {
 }
 
 const statusStyles: Record<string, string> = {
-  new: 'bg-blue-400/10 text-blue-400 border-blue-400/20',
-  acknowledged: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20',
-  investigating: 'bg-orange-400/10 text-orange-400 border-orange-400/20',
-  resolved: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20',
-  false_positive: 'bg-gray-400/10 text-gray-400 border-gray-400/20',
-  open: 'bg-red-400/10 text-red-400 border-red-400/20',
-  in_progress: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20',
-  closed: 'bg-gray-400/10 text-gray-400 border-gray-400/20',
-  low: 'bg-blue-400/10 text-blue-400 border-blue-400/20',
-  medium: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20',
-  high: 'bg-orange-400/10 text-orange-400 border-orange-400/20',
-  critical: 'bg-red-400/10 text-red-400 border-red-400/20',
+  new: 'bg-[#8d7ab5]/10 text-[#a996d3] border-[#8d7ab5]/25',
+  acknowledged: 'bg-[#d8b17a]/10 text-[#e2c495] border-[#d8b17a]/25',
+  investigating: 'bg-[#c97848]/10 text-[#dfa07a] border-[#c97848]/25',
+  resolved: 'bg-[#3ba676]/10 text-[#7cc9a5] border-[#3ba676]/25',
+  false_positive: 'bg-stone-400/10 text-stone-400 border-stone-400/20',
+  open: 'bg-[#b94747]/10 text-[#e08585] border-[#b94747]/25',
+  in_progress: 'bg-[#d8b17a]/10 text-[#e2c495] border-[#d8b17a]/25',
+  closed: 'bg-stone-400/10 text-stone-400 border-stone-400/20',
+  low: 'bg-[#3ba676]/10 text-[#7cc9a5] border-[#3ba676]/25',
+  medium: 'bg-[#d8b17a]/10 text-[#e2c495] border-[#d8b17a]/25',
+  high: 'bg-[#c97848]/10 text-[#dfa07a] border-[#c97848]/25',
+  critical: 'bg-[#b94747]/10 text-[#e08585] border-[#b94747]/25',
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {

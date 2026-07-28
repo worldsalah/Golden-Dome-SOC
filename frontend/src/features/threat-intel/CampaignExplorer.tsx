@@ -34,7 +34,7 @@ export function CampaignExplorer() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search campaign name or description..."
-            className="w-full rounded-md border border-gray-700 bg-gray-900 py-2 pl-10 pr-4 text-sm text-white focus:border-cyan-500 focus:outline-none"
+            className="w-full rounded-md border border-white/[0.1] bg-[#17181b] py-2 pl-10 pr-4 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
           />
         </div>
         <div className="space-y-2">
@@ -45,10 +45,10 @@ export function CampaignExplorer() {
               <button
                 key={c.id}
                 onClick={() => open(c.id)}
-                className="flex w-full items-center justify-between rounded-md border border-gray-800 bg-gray-900/50 px-4 py-3 text-left hover:border-cyan-500/50"
+                className="flex w-full items-center justify-between rounded-md border border-white/[0.07] bg-[#17181b]/50 px-4 py-3 text-left hover:border-[#b98947]/60/50"
               >
                 <div className="flex items-center gap-3">
-                  <Target className="h-5 w-5 text-cyan-400" />
+                  <Target className="h-5 w-5 text-[#d8b17a]" />
                   <div>
                     <p className="text-sm font-medium text-white">{c.campaign_name}</p>
                     <p className="text-xs text-gray-400">{c.status} • {c.start_date ? new Date(c.start_date).toLocaleDateString() : 'Unknown start'}</p>
@@ -68,7 +68,7 @@ export function CampaignExplorer() {
           <div className="space-y-4 text-sm text-gray-300">
             <div className="flex items-center gap-2">
               <span className="text-gray-500">Status:</span>
-              <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-xs text-cyan-400">{selected.status}</span>
+              <span className="rounded-full bg-[#d8b17a]/10 px-2 py-0.5 text-xs text-[#d8b17a]">{selected.status}</span>
             </div>
             {selected.description && <p><span className="text-gray-500">Description:</span> {selected.description}</p>}
             {selected.targeted_sectors && <p><span className="text-gray-500">Targeted Sectors:</span> {selected.targeted_sectors}</p>}
@@ -94,7 +94,7 @@ export function CampaignExplorer() {
                 <p className="text-gray-500">Observed IOCs:</p>
                 <div className="mt-1 space-y-1">
                   {selected.iocs.slice(0, 20).map((ioc: any) => (
-                    <div key={ioc.id} className="flex items-center gap-2 rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2">
+                    <div key={ioc.id} className="flex items-center gap-2 rounded-md border border-white/[0.07] bg-[#17181b]/50 px-3 py-2">
                       {typeIcons[ioc.type] || typeIcons.default}
                       <span className="font-mono text-xs text-gray-200">{ioc.value}</span>
                       <span className={`ml-auto text-xs font-bold ${scoreColor(ioc.threat_score)}`}>{ioc.threat_score}</span>
@@ -103,7 +103,7 @@ export function CampaignExplorer() {
                 </div>
               </div>
             )}
-            <button onClick={() => setSelected(null)} className="text-cyan-400 hover:text-cyan-300">Close</button>
+            <button onClick={() => setSelected(null)} className="text-[#d8b17a] hover:text-[#e2c495]">Close</button>
           </div>
         </ChartCard>
       )}

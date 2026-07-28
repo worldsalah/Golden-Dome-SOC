@@ -38,12 +38,12 @@ export function AssetsPage() {
             <Link
               key={asset.id}
               to={`/assets/${asset.id}`}
-              className="rounded-lg border border-gray-800 bg-soc-panel p-5 transition-colors hover:border-cyan-500/50"
+              className="rounded-lg border border-white/[0.07] bg-soc-panel p-5 transition-colors hover:border-[#b98947]/60/50"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-md bg-cyan-500/10 p-2">
-                    <Server className="h-5 w-5 text-cyan-400" />
+                  <div className="rounded-md bg-[#d8b17a]/10 p-2">
+                    <Server className="h-5 w-5 text-[#d8b17a]" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">{asset.hostname}</h3>
@@ -62,7 +62,7 @@ export function AssetsPage() {
               <div className="mt-4">
                 <div className="h-2 w-full rounded-full bg-gray-700">
                   <div
-                    className="h-2 rounded-full bg-cyan-500"
+                    className="h-2 rounded-full bg-[#c97848]"
                     style={{ width: `${asset.risk_score}%` }}
                   />
                 </div>

@@ -239,7 +239,7 @@ export function AiAssistantPage() {
     <div className="space-y-6">
       <PageHeader title="Sentinel AI" subtitle="AI Security Analyst Copilot — triage, investigate, hunt, and respond" />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1 border-b border-white/[0.07]">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
@@ -254,8 +254,10 @@ export function AiAssistantPage() {
                 if (tab.id === 'report' && !dailyReport) runDailyReport()
                 if (tab.id === 'anomalies' && !anomalies) loadAnomalies()
               }}
-              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                activeTab === tab.id ? 'bg-cyan-600 text-white' : 'border border-gray-700 bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white'
+              className={`flex items-center gap-2 border-b-2 px-3 py-2.5 text-[13px] font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'border-[#c97848] text-stone-100'
+                  : 'border-transparent text-stone-500 hover:text-stone-300'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -271,22 +273,22 @@ export function AiAssistantPage() {
             <div className="flex-1 space-y-4 overflow-y-auto pr-2">
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-800">
-                    {msg.role === 'user' ? <User className="h-4 w-4 text-gray-300" /> : <Bot className="h-4 w-4 text-cyan-400" />}
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#1c1e22]">
+                    {msg.role === 'user' ? <User className="h-4 w-4 text-gray-300" /> : <Bot className="h-4 w-4 text-[#d8b17a]" />}
                   </div>
-                  <div className={`max-w-md rounded-lg px-4 py-2 text-sm ${msg.role === 'user' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-200'}`}>{msg.text}</div>
+                  <div className={`max-w-md rounded-lg px-4 py-2 text-sm ${msg.role === 'user' ? 'bg-[#7c5540] text-white' : 'bg-[#1c1e22] text-gray-200'}`}>{msg.text}</div>
                 </div>
               ))}
               {chatLoading && (
                 <div className="flex gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800"><Bot className="h-4 w-4 text-cyan-400" /></div>
-                  <div className="flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-400"><Loader2 className="h-4 w-4 animate-spin" /> Sentinel AI is thinking...</div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1c1e22]"><Bot className="h-4 w-4 text-[#d8b17a]" /></div>
+                  <div className="flex items-center gap-2 rounded-lg bg-[#1c1e22] px-4 py-2 text-sm text-gray-400"><Loader2 className="h-4 w-4 animate-spin" /> Sentinel AI is thinking...</div>
                 </div>
               )}
             </div>
-            <div className="mt-4 flex gap-2 border-t border-gray-800 pt-4">
-              <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendChat()} placeholder="Ask Sentinel AI..." className="flex-1 rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
-              <button onClick={sendChat} className="rounded-md bg-cyan-600 px-3 py-2 text-white hover:bg-cyan-500"><Send className="h-4 w-4" /></button>
+            <div className="mt-4 flex gap-2 border-t border-white/[0.07] pt-4">
+              <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendChat()} placeholder="Ask Sentinel AI..." className="flex-1 rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
+              <button onClick={sendChat} className="rounded-md bg-[#7c5540] px-3 py-2 text-white hover:bg-[#8d6350]"><Send className="h-4 w-4" /></button>
             </div>
           </ChartCard>
 
@@ -299,7 +301,7 @@ export function AiAssistantPage() {
                   'What immediate response steps are safe for a suspected brute force alert?',
                   'Analyze alert 1',
                 ].map((q) => (
-                  <button key={q} onClick={() => setChatInput(q)} className="rounded-md border border-gray-700 bg-gray-900 p-4 text-left text-sm text-gray-300 hover:border-cyan-500 hover:text-white">{q}</button>
+                  <button key={q} onClick={() => setChatInput(q)} className="rounded-md border border-white/[0.1] bg-[#17181b] p-4 text-left text-sm text-gray-300 hover:border-[#b98947]/60 hover:text-white">{q}</button>
                 ))}
               </div>
             </ChartCard>
@@ -314,8 +316,8 @@ export function AiAssistantPage() {
         <div className="space-y-6">
           <ChartCard title="Analyze Alert with AI">
             <div className="flex gap-2">
-              <input value={alertId} onChange={(e) => setAlertId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runAlertAnalysis()} placeholder="Alert ID..." className="rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
-              <button onClick={runAlertAnalysis} disabled={analysisLoading} className="flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm text-white hover:bg-violet-500 disabled:opacity-50">
+              <input value={alertId} onChange={(e) => setAlertId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runAlertAnalysis()} placeholder="Alert ID..." className="rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
+              <button onClick={runAlertAnalysis} disabled={analysisLoading} className="flex items-center gap-2 rounded-md bg-[#6d5a96] px-4 py-2 text-sm text-white hover:bg-[#7d69ab] disabled:opacity-50">
                 {analysisLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Analyze
               </button>
             </div>
@@ -336,8 +338,8 @@ export function AiAssistantPage() {
         <div className="space-y-6">
           <ChartCard title="Investigate Incident with AI">
             <div className="flex gap-2">
-              <input value={incidentId} onChange={(e) => setIncidentId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runIncidentInvestigation()} placeholder="Incident ID..." className="rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
-              <button onClick={runIncidentInvestigation} disabled={incidentLoading} className="flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm text-white hover:bg-violet-500 disabled:opacity-50">
+              <input value={incidentId} onChange={(e) => setIncidentId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runIncidentInvestigation()} placeholder="Incident ID..." className="rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
+              <button onClick={runIncidentInvestigation} disabled={incidentLoading} className="flex items-center gap-2 rounded-md bg-[#6d5a96] px-4 py-2 text-sm text-white hover:bg-[#7d69ab] disabled:opacity-50">
                 {incidentLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Investigate
               </button>
             </div>
@@ -350,8 +352,8 @@ export function AiAssistantPage() {
         <div className="space-y-6">
           <ChartCard title="AI Threat Hunting Assistant">
             <div className="flex gap-2">
-              <input value={huntQuery} onChange={(e) => setHuntQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runThreatHunt()} placeholder="e.g. Find suspicious login activity" className="flex-1 rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
-              <button onClick={runThreatHunt} disabled={huntLoading} className="flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm text-white hover:bg-violet-500 disabled:opacity-50">
+              <input value={huntQuery} onChange={(e) => setHuntQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runThreatHunt()} placeholder="e.g. Find suspicious login activity" className="flex-1 rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
+              <button onClick={runThreatHunt} disabled={huntLoading} className="flex items-center gap-2 rounded-md bg-[#6d5a96] px-4 py-2 text-sm text-white hover:bg-[#7d69ab] disabled:opacity-50">
                 {huntLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Hunt
               </button>
             </div>
@@ -364,11 +366,11 @@ export function AiAssistantPage() {
         <div className="space-y-6">
           <ChartCard title="AI Playbook Generator">
             <div className="space-y-3">
-              <textarea value={pbDesc} onChange={(e) => setPbDesc(e.target.value)} placeholder="Describe the alert or incident scenario..." rows={3} className="w-full rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
+              <textarea value={pbDesc} onChange={(e) => setPbDesc(e.target.value)} placeholder="Describe the alert or incident scenario..." rows={3} className="w-full rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
               <div className="flex gap-3">
-                <input value={pbMitre} onChange={(e) => setPbMitre(e.target.value)} placeholder="MITRE technique e.g. T1110" className="rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
-                <input type="number" min={1} max={15} value={pbSeverity} onChange={(e) => setPbSeverity(parseInt(e.target.value, 10))} className="w-24 rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
-                <button onClick={runPlaybookGen} disabled={pbLoading} className="flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm text-white hover:bg-violet-500 disabled:opacity-50">
+                <input value={pbMitre} onChange={(e) => setPbMitre(e.target.value)} placeholder="MITRE technique e.g. T1110" className="rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
+                <input type="number" min={1} max={15} value={pbSeverity} onChange={(e) => setPbSeverity(parseInt(e.target.value, 10))} className="w-24 rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
+                <button onClick={runPlaybookGen} disabled={pbLoading} className="flex items-center gap-2 rounded-md bg-[#6d5a96] px-4 py-2 text-sm text-white hover:bg-[#7d69ab] disabled:opacity-50">
                   {pbLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Generate
                 </button>
               </div>
@@ -381,7 +383,7 @@ export function AiAssistantPage() {
       {activeTab === 'report' && (
         <div className="space-y-6">
           <ChartCard title="Daily SOC Report" right={
-            <button onClick={runDailyReport} disabled={reportLoading} className="flex items-center gap-2 rounded-md bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-500 disabled:opacity-50">
+            <button onClick={runDailyReport} disabled={reportLoading} className="flex items-center gap-2 rounded-md bg-[#7c5540] px-3 py-1.5 text-xs text-white hover:bg-[#8d6350] disabled:opacity-50">
               {reportLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />} Regenerate
             </button>
           }>
@@ -394,7 +396,7 @@ export function AiAssistantPage() {
       {activeTab === 'anomalies' && (
         <div className="space-y-6">
           <ChartCard title="ML Anomaly Detection" right={
-            <button onClick={loadAnomalies} disabled={anomaliesLoading} className="flex items-center gap-2 rounded-md bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-500 disabled:opacity-50">
+            <button onClick={loadAnomalies} disabled={anomaliesLoading} className="flex items-center gap-2 rounded-md bg-[#7c5540] px-3 py-1.5 text-xs text-white hover:bg-[#8d6350] disabled:opacity-50">
               {anomaliesLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Activity className="h-3 w-3" />} Refresh
             </button>
           }>
@@ -417,7 +419,7 @@ export function AiAssistantPage() {
           </div>
           <div className="flex gap-2">
             {(['history', 'audit', 'feedback'] as const).map((sub) => (
-              <button key={sub} onClick={() => setHistorySubTab(sub)} className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${historySubTab === sub ? 'bg-cyan-600 text-white' : 'border border-gray-700 bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+              <button key={sub} onClick={() => setHistorySubTab(sub)} className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${historySubTab === sub ? 'bg-[#7c5540] text-white' : 'border border-white/[0.1] bg-[#17181b] text-gray-400 hover:bg-white/[0.06] hover:text-white'}`}>
                 {sub === 'history' ? 'Analysis History' : sub === 'audit' ? 'Audit Logs' : 'Feedback'}
               </button>
             ))}
@@ -428,7 +430,7 @@ export function AiAssistantPage() {
               <div className="max-h-80 space-y-2 overflow-y-auto pr-2">
                 {history.length === 0 && <p className="text-sm text-gray-500">No AI analyses yet.</p>}
                 {history.map((h) => (
-                  <div key={h.analysis_id} className="rounded-md border border-gray-700 bg-gray-900 p-3">
+                  <div key={h.analysis_id} className="rounded-md border border-white/[0.1] bg-[#17181b] p-3">
                     <p className="text-sm font-medium text-white">Analysis #{h.analysis_id}</p>
                     <p className="text-xs text-gray-500">{h.executive_summary.slice(0, 120)}...</p>
                     <div className="mt-2 flex gap-2 text-xs">
@@ -447,9 +449,9 @@ export function AiAssistantPage() {
               <div className="max-h-80 space-y-2 overflow-y-auto pr-2">
                 {auditLogs.length === 0 && <p className="text-sm text-gray-500">No AI audit logs yet.</p>}
                 {auditLogs.map((log) => (
-                  <div key={log.id} className="rounded-md border border-gray-700 bg-gray-900 p-3">
+                  <div key={log.id} className="rounded-md border border-white/[0.1] bg-[#17181b] p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-cyan-400">{log.endpoint}</span>
+                      <span className="text-xs font-medium text-[#d8b17a]">{log.endpoint}</span>
                       <span className="text-xs text-gray-500">{new Date(log.created_at).toLocaleString()}</span>
                     </div>
                     <p className="mt-1 text-xs text-gray-400">{log.response_summary.slice(0, 120)}...</p>

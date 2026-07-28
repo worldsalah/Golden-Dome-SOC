@@ -55,7 +55,7 @@ export function AlertAnalysisCard({ analysis, feedbackSent, onHelpful, onIncorre
           <div className="space-y-2 text-sm">
             <p><span className="text-gray-500">Tactic:</span> <span className="text-white">{analysis.mitre_mapping.tactic}</span></p>
             <p><span className="text-gray-500">Technique:</span> <span className="text-white">{analysis.mitre_mapping.technique}</span></p>
-            <p><span className="text-gray-500">ID:</span> <span className="rounded bg-cyan-500/10 px-2 py-0.5 text-cyan-400">{analysis.mitre_mapping.technique_id}</span></p>
+            <p><span className="text-gray-500">ID:</span> <span className="rounded bg-[#d8b17a]/10 px-2 py-0.5 text-[#d8b17a]">{analysis.mitre_mapping.technique_id}</span></p>
           </div>
         </ChartCard>
         <ChartCard title="Technical Explanation">
@@ -79,7 +79,7 @@ export function AlertAnalysisCard({ analysis, feedbackSent, onHelpful, onIncorre
       <ChartCard title="Recommended Response">
         <div className="grid gap-4 sm:grid-cols-3">
           {(['immediate', 'short_term', 'long_term'] as const).map((phase) => (
-            <div key={phase} className="rounded-md border border-gray-700 bg-gray-900 p-3">
+            <div key={phase} className="rounded-md border border-white/[0.1] bg-[#17181b] p-3">
               <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{phase.replace('_', ' ')}</h4>
               <ul className="list-disc space-y-1 pl-4 text-sm text-gray-300">
                 {analysis.recommended_response[phase].map((item, i) => <li key={i}>{item}</li>)}
@@ -137,7 +137,7 @@ export function IncidentInvestigationCard({ report }: IncidentInvestigationCardP
           {(['immediate', 'short_term', 'long_term'] as const).map((phase) => {
             const rec = report.recommended_remediation?.[phase] ?? []
             return (
-              <div key={phase} className="rounded-md border border-gray-700 bg-gray-900 p-3">
+              <div key={phase} className="rounded-md border border-white/[0.1] bg-[#17181b] p-3">
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{phase.replace('_', ' ')}</h4>
                 <ul className="list-disc space-y-1 pl-4 text-sm text-gray-300">{rec.map((item, i) => <li key={i}>{item}</li>)}</ul>
               </div>
@@ -149,7 +149,7 @@ export function IncidentInvestigationCard({ report }: IncidentInvestigationCardP
         <ChartCard title="Timeline">
           <div className="space-y-2">
             {report.timeline.map((event, idx) => (
-              <div key={idx} className="border-l-2 border-cyan-500 pl-3 text-sm text-gray-300">
+              <div key={idx} className="border-l-2 border-[#c97848] pl-3 text-sm text-gray-300">
                 {typeof event === 'string' ? event : JSON.stringify(event)}
               </div>
             ))}
@@ -192,7 +192,7 @@ export function ThreatHuntCard({ result }: ThreatHuntCardProps) {
       </div>
       <ChartCard title="Indicators to Hunt">
         <div className="flex flex-wrap gap-2">
-          {result.indicators_to_hunt.map((ind, i) => <span key={i} className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs text-cyan-400">{ind}</span>)}
+          {result.indicators_to_hunt.map((ind, i) => <span key={i} className="rounded-full bg-[#d8b17a]/10 px-3 py-1 text-xs text-[#d8b17a]">{ind}</span>)}
         </div>
       </ChartCard>
       {!!result.mitre_techniques.length && (
@@ -227,7 +227,7 @@ export function PlaybookCard({ playbook }: PlaybookCardProps) {
       <ChartCard title="Actions">
         <div className="space-y-2">
           {playbook.actions.map((action, i) => (
-            <div key={i} className="flex items-center justify-between rounded-md border border-gray-700 bg-gray-900 p-3">
+            <div key={i} className="flex items-center justify-between rounded-md border border-white/[0.1] bg-[#17181b] p-3">
               <span className="text-sm font-medium text-white">{action.action}</span>
               <span className="font-mono text-xs text-gray-500">{JSON.stringify(action.params)}</span>
             </div>
@@ -259,7 +259,7 @@ export function DailyReportCard({ report }: DailyReportCardProps) {
       <p className="text-sm text-gray-200">{report.executive_summary}</p>
       <div className="grid gap-3 sm:grid-cols-4">
         {Object.entries(report.key_metrics).map(([k, v]) => (
-          <div key={k} className="rounded-md border border-gray-700 bg-gray-900 p-3 text-center">
+          <div key={k} className="rounded-md border border-white/[0.1] bg-[#17181b] p-3 text-center">
             <p className="text-2xl font-bold text-white">{v}</p>
             <p className="text-xs text-gray-500 capitalize">{k.replace('_', ' ')}</p>
           </div>
@@ -289,7 +289,7 @@ export function AnomalyList({ items, title }: AnomalyRecordProps) {
       ) : (
         <div className="space-y-2">
           {items.map((item, i) => (
-            <div key={i} className="flex items-center justify-between rounded-md border border-gray-700 bg-gray-900 p-3">
+            <div key={i} className="flex items-center justify-between rounded-md border border-white/[0.1] bg-[#17181b] p-3">
               <div>
                 <p className="text-sm font-medium text-white">{item.source_ip}</p>
                 {item.details && <p className="text-xs text-gray-500">{item.details}</p>}
@@ -323,7 +323,7 @@ export function FeedbackList({ feedback, loading }: FeedbackListProps) {
         <div className="max-h-80 space-y-2 overflow-y-auto pr-2">
           {feedback.length === 0 && <p className="text-sm text-gray-500">No AI feedback yet.</p>}
           {feedback.map((f) => (
-            <div key={f.id} className="rounded-md border border-gray-700 bg-gray-900 p-3">
+            <div key={f.id} className="rounded-md border border-white/[0.1] bg-[#17181b] p-3">
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-medium ${f.helpful ? 'text-emerald-400' : f.incorrect ? 'text-red-400' : 'text-gray-400'}`}>
                   {f.helpful ? 'Helpful' : f.incorrect ? 'Incorrect' : 'Neutral'}

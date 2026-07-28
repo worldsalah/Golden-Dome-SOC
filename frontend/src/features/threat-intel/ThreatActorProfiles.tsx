@@ -33,7 +33,7 @@ export function ThreatActorProfiles() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search actor, country, or motivation..."
-            className="w-full rounded-md border border-gray-700 bg-gray-900 py-2 pl-10 pr-4 text-sm text-white focus:border-cyan-500 focus:outline-none"
+            className="w-full rounded-md border border-white/[0.1] bg-[#17181b] py-2 pl-10 pr-4 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
           />
         </div>
         <div className="space-y-2">
@@ -44,7 +44,7 @@ export function ThreatActorProfiles() {
               <button
                 key={a.id}
                 onClick={() => open(a.id)}
-                className="flex w-full items-center justify-between rounded-md border border-gray-800 bg-gray-900/50 px-4 py-3 text-left hover:border-cyan-500/50"
+                className="flex w-full items-center justify-between rounded-md border border-white/[0.07] bg-[#17181b]/50 px-4 py-3 text-left hover:border-[#b98947]/60/50"
               >
                 <div className="flex items-center gap-3">
                   <UserRoundX className="h-5 w-5 text-red-400" />
@@ -72,7 +72,7 @@ export function ThreatActorProfiles() {
             {selected.targeted_sectors && <p><span className="text-gray-500">Targeted Sectors:</span> {selected.targeted_sectors}</p>}
             {selected.targeted_regions && <p><span className="text-gray-500">Targeted Regions:</span> {selected.targeted_regions}</p>}
             {selected.techniques && <p><span className="text-gray-500">MITRE Techniques:</span> {selected.techniques}</p>}
-            <button onClick={() => setSelected(null)} className="text-cyan-400 hover:text-cyan-300">Close</button>
+            <button onClick={() => setSelected(null)} className="text-[#d8b17a] hover:text-[#e2c495]">Close</button>
           </div>
         </ChartCard>
       )}

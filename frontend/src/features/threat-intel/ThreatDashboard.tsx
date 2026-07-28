@@ -30,7 +30,7 @@ function StatCard({
   color: string
 }) {
   return (
-    <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-4">
+    <div className="rounded-lg border border-white/[0.07] bg-[#17181b]/50 p-4">
       <div className="flex items-center justify-between">
         <div className={`rounded-md p-2 ${color}`}>
           <Icon className="h-5 w-5 text-white" />
@@ -54,7 +54,7 @@ export function ThreatDashboard() {
       grid: { top: 10, right: 10, bottom: 20, left: 40 },
       xAxis: { type: 'category', data: dash?.ioc_trend?.map((d: any) => d.date) || [], axisLabel: { color: '#9ca3af' } },
       yAxis: { type: 'value', axisLabel: { color: '#9ca3af' }, splitLine: { lineStyle: { color: '#374151' } } },
-      series: [{ data: dash?.ioc_trend?.map((d: any) => d.count) || [], type: 'line', smooth: true, itemStyle: { color: '#06b6d4' }, areaStyle: { opacity: 0.2 } }],
+      series: [{ data: dash?.ioc_trend?.map((d: any) => d.count) || [], type: 'line', smooth: true, itemStyle: { color: '#c97848' }, areaStyle: { opacity: 0.2 } }],
     }),
     [dash],
   )
@@ -75,10 +75,10 @@ export function ThreatDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Globe} label="Total IOCs" value={dash?.total_iocs ?? 0} color="bg-cyan-600" />
-        <StatCard icon={Skull} label="Malicious IOCs" value={dash?.malicious_iocs ?? 0} color="bg-red-600" />
-        <StatCard icon={Activity} label="New IOCs (24h)" value={dash?.new_iocs_24h ?? 0} color="bg-emerald-600" />
-        <StatCard icon={Radio} label="Healthy Feeds" value={dash?.feed_health?.filter((h: any) => h.healthy).length ?? 0} color="bg-blue-600" />
+        <StatCard icon={Globe} label="Total IOCs" value={dash?.total_iocs ?? 0} color="bg-[#7c5540]" />
+        <StatCard icon={Skull} label="Malicious IOCs" value={dash?.malicious_iocs ?? 0} color="bg-[#8a3d3d]" />
+        <StatCard icon={Activity} label="New IOCs (24h)" value={dash?.new_iocs_24h ?? 0} color="bg-[#2e6b4f]" />
+        <StatCard icon={Radio} label="Healthy Feeds" value={dash?.feed_health?.filter((h: any) => h.healthy).length ?? 0} color="bg-[#6d5a96]" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -95,7 +95,7 @@ export function ThreatDashboard() {
           <div className="space-y-2">
             {dash?.top_malicious_ips?.length ? (
               dash.top_malicious_ips.map((ioc: any) => (
-                <div key={ioc.id} className="flex items-center justify-between rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2">
+                <div key={ioc.id} className="flex items-center justify-between rounded-md border border-white/[0.07] bg-[#17181b]/50 px-3 py-2">
                   <div className="flex items-center gap-2">
                     {typeIcons[ioc.type] || typeIcons.default}
                     <span className="font-mono text-sm text-gray-200">{ioc.value}</span>
@@ -113,9 +113,9 @@ export function ThreatDashboard() {
           <div className="space-y-2">
             {dash?.active_campaigns?.length ? (
               dash.active_campaigns.map((c: any) => (
-                <div key={c.id} className="rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2">
+                <div key={c.id} className="rounded-md border border-white/[0.07] bg-[#17181b]/50 px-3 py-2">
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-sm font-medium text-white"><Target className="h-4 w-4 text-cyan-400" /> {c.campaign_name}</span>
+                    <span className="flex items-center gap-2 text-sm font-medium text-white"><Target className="h-4 w-4 text-[#d8b17a]" /> {c.campaign_name}</span>
                     <span className="text-xs text-gray-400">{c.status}</span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-xs text-gray-400">{c.description}</p>
@@ -130,7 +130,7 @@ export function ThreatDashboard() {
         <ChartCard title="Feed Health">
           <div className="space-y-2">
             {dash?.feed_health?.map((feed: any) => (
-              <div key={feed.name} className="flex items-center justify-between rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2">
+              <div key={feed.name} className="flex items-center justify-between rounded-md border border-white/[0.07] bg-[#17181b]/50 px-3 py-2">
                 <span className="text-sm text-gray-200 capitalize">{feed.name.replace(/_/g, ' ')}</span>
                 {feed.healthy ? <ShieldCheck className="h-4 w-4 text-emerald-400" /> : <AlertTriangle className="h-4 w-4 text-red-400" />}
               </div>
@@ -144,7 +144,7 @@ export function ThreatDashboard() {
           <div className="space-y-2">
             {dash?.top_malware_families?.length ? (
               dash.top_malware_families.map((m: any) => (
-                <div key={m.id} className="flex items-center gap-2 rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2">
+                <div key={m.id} className="flex items-center gap-2 rounded-md border border-white/[0.07] bg-[#17181b]/50 px-3 py-2">
                   <Bug className="h-4 w-4 text-purple-400" />
                   <span className="text-sm text-gray-200">{m.family}</span>
                 </div>
@@ -159,7 +159,7 @@ export function ThreatDashboard() {
           <div className="space-y-2">
             {dash?.high_risk_vulnerabilities?.length ? (
               dash.high_risk_vulnerabilities.map((v: any) => (
-                <div key={v.id} className="rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2">
+                <div key={v.id} className="rounded-md border border-white/[0.07] bg-[#17181b]/50 px-3 py-2">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-sm font-medium text-white"><Zap className="h-4 w-4 text-amber-400" /> {v.cve}</span>
                     <span className={`text-sm font-bold ${scoreColor(v.cvss_score || 0)}`}>{v.cvss_score ?? '—'}</span>

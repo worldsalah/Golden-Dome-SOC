@@ -11,7 +11,7 @@ const attacks: Attack[] = [
   { from: { x: 0.25, y: 0.55 }, to: { x: 0.55, y: 0.4 }, color: '#f97316' },
   { from: { x: 0.72, y: 0.28 }, to: { x: 0.58, y: 0.42 }, color: '#f59e0b' },
   { from: { x: 0.45, y: 0.25 }, to: { x: 0.56, y: 0.45 }, color: '#ef4444' },
-  { from: { x: 0.82, y: 0.6 }, to: { x: 0.6, y: 0.48 }, color: '#06b6d4' },
+  { from: { x: 0.82, y: 0.6 }, to: { x: 0.6, y: 0.48 }, color: '#c97848' },
 ]
 
 export function AttackMap() {
@@ -60,7 +60,7 @@ export function AttackMap() {
         ctx.stroke()
       }
       ctx.globalAlpha = 1
-      ctx.fillStyle = '#06b6d4'
+      ctx.fillStyle = '#c97848'
       ctx.beginPath()
       ctx.arc(x, y, 4, 0, Math.PI * 2)
       ctx.fill()

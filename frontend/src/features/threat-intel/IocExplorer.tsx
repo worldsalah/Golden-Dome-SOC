@@ -48,12 +48,12 @@ export function IocExplorer() {
             onChange={(e) => setIndicator(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && lookup()}
             placeholder="IP, domain, hash, URL, CVE, email..."
-            className="flex-1 rounded-md border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+            className="flex-1 rounded-md border border-white/[0.1] bg-[#17181b] px-4 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
           />
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+            className="rounded-md border border-white/[0.1] bg-[#17181b] px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none"
           >
             <option value="">Auto-detect</option>
             <option value="ip">IP</option>
@@ -66,7 +66,7 @@ export function IocExplorer() {
           <button
             onClick={lookup}
             disabled={enrichMutation.isPending}
-            className="flex items-center justify-center gap-2 rounded-md bg-cyan-600 px-4 py-2 text-sm text-white hover:bg-cyan-500 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-md bg-[#7c5540] px-4 py-2 text-sm text-white hover:bg-[#8d6350] disabled:opacity-50"
           >
             {enrichMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             Enrich
@@ -81,7 +81,7 @@ export function IocExplorer() {
         <ChartCard title="IOC Enrichment Result">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d8b17a]/10 text-[#d8b17a]">
                 {typeIcons[detail.type] || typeIcons.default}
               </div>
               <div>
@@ -95,15 +95,15 @@ export function IocExplorer() {
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-md border border-gray-800 bg-gray-900/50 p-3 text-center">
+              <div className="rounded-md border border-white/[0.07] bg-[#17181b]/50 p-3 text-center">
                 <p className="text-xs text-gray-400">Reputation</p>
                 <p className={`text-lg font-bold ${scoreColor(detail.reputation_score || 0)}`}>{detail.reputation_score ?? 0}</p>
               </div>
-              <div className="rounded-md border border-gray-800 bg-gray-900/50 p-3 text-center">
+              <div className="rounded-md border border-white/[0.07] bg-[#17181b]/50 p-3 text-center">
                 <p className="text-xs text-gray-400">Threat Score</p>
                 <p className={`text-lg font-bold ${scoreColor(detail.threat_score || 0)}`}>{detail.threat_score ?? 0}</p>
               </div>
-              <div className="rounded-md border border-gray-800 bg-gray-900/50 p-3 text-center">
+              <div className="rounded-md border border-white/[0.07] bg-[#17181b]/50 p-3 text-center">
                 <p className="text-xs text-gray-400">Confidence</p>
                 <p className={`text-lg font-bold ${scoreColor(detail.confidence || 0)}`}>{detail.confidence ?? 0}</p>
               </div>
@@ -118,19 +118,19 @@ export function IocExplorer() {
               <p className="text-xs text-gray-500">Sources</p>
               <div className="mt-1 flex flex-wrap gap-2">
                 {(detail.sources || []).map((src: any, i: number) => (
-                  <span key={i} className="inline-flex items-center gap-1 rounded-full bg-gray-800 px-2 py-1 text-xs text-gray-300">
+                  <span key={i} className="inline-flex items-center gap-1 rounded-full bg-[#1c1e22] px-2 py-1 text-xs text-gray-300">
                     <ShieldCheck className="h-3 w-3" /> {src.name} {src.score !== null && src.score !== undefined ? `(${src.score})` : ''}
                   </span>
                 ))}
               </div>
             </div>
             {detail.scoring && detail.scoring.explanation && (
-              <div className="rounded-md border border-gray-800 bg-gray-900/50 p-3">
+              <div className="rounded-md border border-white/[0.07] bg-[#17181b]/50 p-3">
                 <p className="text-xs text-gray-500">Scoring Explanation</p>
                 <p className="mt-1 text-sm text-gray-300">{detail.scoring.explanation}</p>
               </div>
             )}
-            <button onClick={() => setDetailOpen(false)} className="text-sm text-cyan-400 hover:text-cyan-300">Close result</button>
+            <button onClick={() => setDetailOpen(false)} className="text-sm text-[#d8b17a] hover:text-[#e2c495]">Close result</button>
           </div>
         </ChartCard>
       )}
@@ -138,7 +138,7 @@ export function IocExplorer() {
       <ChartCard title="Local IOC Database">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-gray-800 text-gray-400">
+            <thead className="border-b border-white/[0.07] text-gray-400">
               <tr>
                 <th className="pb-2 font-medium">Value</th>
                 <th className="pb-2 font-medium">Type</th>
@@ -148,12 +148,12 @@ export function IocExplorer() {
                 <th className="pb-2 font-medium">Last Seen</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800">
+            <tbody className="divide-y divide-white/[0.06]">
               {isLoading ? (
                 <tr><td colSpan={6} className="py-4 text-center text-gray-500"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></td></tr>
               ) : iocs?.length ? (
                 iocs.map((ioc: any) => (
-                  <tr key={ioc.id} className="hover:bg-gray-800/30 cursor-pointer" onClick={() => openDetail(ioc.value)}>
+                  <tr key={ioc.id} className="hover:bg-white/[0.03] cursor-pointer" onClick={() => openDetail(ioc.value)}>
                     <td className="py-3 font-mono text-gray-200">{ioc.value}</td>
                     <td className="py-3 text-gray-400">{ioc.type}</td>
                     <td className="py-3"><span className={`font-medium ${scoreColor(ioc.threat_score)}`}>{ioc.threat_score}</span></td>

@@ -155,8 +155,8 @@ export function DashboardPage() {
           type: 'line',
           smooth: true,
           areaStyle: { color: 'rgba(6,182,212,0.2)' },
-          lineStyle: { color: '#06b6d4', width: 2 },
-          itemStyle: { color: '#06b6d4' },
+          lineStyle: { color: '#c97848', width: 2 },
+          itemStyle: { color: '#c97848' },
         },
       ],
     }),
@@ -166,7 +166,7 @@ export function DashboardPage() {
   const severityOption = useMemo(
     () => ({
       backgroundColor: 'transparent',
-      color: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'],
+      color: ['#ef4444', '#f59e0b', '#8d7ab5', '#10b981'],
       series: [
         {
           type: 'pie',
@@ -188,7 +188,7 @@ export function DashboardPage() {
   const mitreCoverageOption = useMemo(
     () => ({
       backgroundColor: 'transparent',
-      color: ['#06b6d4'],
+      color: ['#c97848'],
       grid: { top: 10, right: 20, bottom: 60, left: 130 },
       xAxis: {
         type: 'value',
@@ -229,7 +229,7 @@ export function DashboardPage() {
       <motion.div variants={item} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard title="Critical Alerts" value={criticalAlerts} icon={Siren} trend="2 unassigned" trendUp={false} color="#ef4444" delay={0} />
         <KpiCard title="Active Incidents" value={openIncidents} icon={ShieldAlert} trend="-1 today" trendUp={false} color="#f97316" delay={0.05} />
-        <KpiCard title="Global Risk Score" value={`${avgRisk}/100`} icon={Target} trend="+4% vs yesterday" trendUp={false} color="#06b6d4" delay={0.1} />
+        <KpiCard title="Global Risk Score" value={`${avgRisk}/100`} icon={Target} trend="+4% vs yesterday" trendUp={false} color="#c97848" delay={0.1} />
         <KpiCard title="Assets Monitored" value={totalAssets} icon={Server} trend="100% online" trendUp color="#10b981" delay={0.15} />
         <KpiCard title="MTTD" value="4m 12s" icon={Clock} trend="-18s" trendUp color="#8b5cf6" delay={0.2} />
         <KpiCard title="MTTR" value="23m 45s" icon={Zap} trend="+2m" trendUp={false} color="#eab308" delay={0.25} />
@@ -248,7 +248,7 @@ export function DashboardPage() {
         <AnimatedCard className="enterprise-panel p-5">
           <h3 className="mb-4 text-sm font-semibold text-gray-200">Attack Timeline</h3>
           <div className="relative space-y-5 pl-4">
-            <div className="absolute bottom-0 left-[19px] top-2 w-px bg-gray-800" />
+            <div className="absolute bottom-0 left-[19px] top-2 w-px bg-[#1c1e22]" />
             {attackTimeline.map((event, idx) => (
               <motion.div
                 key={idx}
@@ -265,11 +265,11 @@ export function DashboardPage() {
                         ? 'bg-orange-500'
                         : event.severity === 'medium'
                           ? 'bg-yellow-500'
-                          : 'bg-cyan-500'
+                          : 'bg-[#c97848]'
                   }`}
                 />
                 <div>
-                  <p className="text-xs text-cyan-400">{event.time}</p>
+                  <p className="text-xs text-[#d8b17a]">{event.time}</p>
                   <p className="text-sm font-medium text-gray-200">{event.event}</p>
                 </div>
               </motion.div>
@@ -294,7 +294,7 @@ export function DashboardPage() {
         <ChartCard title="Top Attacking IPs">
           <div className="space-y-3 pt-2">
             {['10.0.0.55', '192.168.1.200', '172.16.0.12'].map((ip, idx) => (
-              <div key={ip} className="flex items-center justify-between rounded-md bg-gray-900/50 p-3 transition-colors hover:bg-gray-900">
+              <div key={ip} className="flex items-center justify-between rounded-md bg-[#17181b]/50 p-3 transition-colors hover:bg-[#17181b]">
                 <div className="flex items-center gap-3">
                   <Globe className="h-4 w-4 text-gray-500" />
                   <span className="font-mono text-sm text-gray-200">{ip}</span>
@@ -316,7 +316,7 @@ export function DashboardPage() {
               .sort((a, b) => b.risk_score - a.risk_score)
               .slice(0, 3)
               .map((asset) => (
-                <div key={asset.id} className="flex items-center justify-between rounded-md bg-gray-900/50 p-3 transition-colors hover:bg-gray-900">
+                <div key={asset.id} className="flex items-center justify-between rounded-md bg-[#17181b]/50 p-3 transition-colors hover:bg-[#17181b]">
                   <div>
                     <p className="text-sm font-medium text-gray-200">{asset.hostname}</p>
                     <p className="text-xs text-gray-500">{asset.ip_address}</p>
@@ -327,7 +327,7 @@ export function DashboardPage() {
                         initial={{ width: 0 }}
                         animate={{ width: `${asset.risk_score}%` }}
                         transition={{ duration: 1 }}
-                        className="h-2 rounded-full bg-cyan-500"
+                        className="h-2 rounded-full bg-[#c97848]"
                       />
                     </div>
                     <span className="text-xs font-medium text-gray-300">{asset.risk_score}</span>
@@ -339,7 +339,7 @@ export function DashboardPage() {
         <ChartCard title="Recent Incidents">
           <div className="space-y-3 pt-2">
             {incidents.slice(0, 3).map((incident) => (
-              <div key={incident.id} className="flex items-center justify-between rounded-md bg-gray-900/50 p-3 transition-colors hover:bg-gray-900">
+              <div key={incident.id} className="flex items-center justify-between rounded-md bg-[#17181b]/50 p-3 transition-colors hover:bg-[#17181b]">
                 <div>
                   <p className="text-sm font-medium text-gray-200">{incident.name}</p>
                   <p className="text-xs text-gray-500 capitalize">{incident.severity} · {incident.status.replace('_', ' ')}</p>

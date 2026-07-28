@@ -36,5 +36,5 @@ export function scoreColor(score: number) {
 
 export function threatIcon(severity: string) {
   if (severity === 'extreme' || severity === 'critical') return <Skull className="h-5 w-5 text-red-400" />
-  return <Shield className="h-5 w-5 text-cyan-400" />
+  return <Shield className="h-5 w-5 text-[#d8b17a]" />
 }

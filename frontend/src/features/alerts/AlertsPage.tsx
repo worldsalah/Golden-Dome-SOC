@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Download, Loader2, RefreshCw, Search } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { PageHeader } from '@/components/PageHeader'
+import { ArrowUpRight, Download, Loader2, RefreshCw, Search } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { severityLabel } from '@/utils/formatters'
 import apiClient, { syncAlerts, updateAlertStatus } from '@/services/api'
 import { Alert } from '@/types'
@@ -17,11 +16,19 @@ const demoAlerts: Alert[] = [
 
 const statusOptions: Alert['status'][] = ['new', 'acknowledged', 'investigating', 'resolved', 'false_positive']
 
+function severityClass(severity: number) {
+  if (severity >= 12) return 'sev-critical'
+  if (severity >= 10) return 'sev-high'
+  if (severity >= 7) return 'sev-medium'
+  return 'sev-low'
+}
+
 export function AlertsPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [severityFilter, setSeverityFilter] = useState('')
+  const [selectedId, setSelectedId] = useState<number | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['alerts', { page: 1, limit: 50 }],
@@ -42,16 +49,22 @@ export function AlertsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
   })
 
-  const filteredAlerts = data.data.filter((alert) => {
-    const matchesSearch =
-      alert.title.toLowerCase().includes(search.toLowerCase()) ||
-      alert.source_ip?.includes(search) ||
-      alert.wazuh_alert_id.includes(search) ||
-      alert.mitre_technique?.includes(search)
-    const matchesStatus = statusFilter ? alert.status === statusFilter : true
-    const matchesSeverity = severityFilter ? severityLabel(alert.severity).toLowerCase() === severityFilter : true
-    return matchesSearch && matchesStatus && matchesSeverity
-  })
+  const filteredAlerts = useMemo(
+    () =>
+      data.data.filter((alert) => {
+        const matchesSearch =
+          alert.title.toLowerCase().includes(search.toLowerCase()) ||
+          alert.source_ip?.includes(search) ||
+          alert.wazuh_alert_id.includes(search) ||
+          alert.mitre_technique?.includes(search)
+        const matchesStatus = statusFilter ? alert.status === statusFilter : true
+        const matchesSeverity = severityFilter ? severityLabel(alert.severity).toLowerCase() === severityFilter : true
+        return matchesSearch && matchesStatus && matchesSeverity
+      }),
+    [data.data, search, statusFilter, severityFilter],
+  )
+
+  const selected = filteredAlerts.find((a) => a.id === selectedId) ?? filteredAlerts[0] ?? null
 
   const exportCsv = () => {
     const headers = ['id', 'title', 'severity', 'status', 'source_ip', 'destination_ip', 'rule_id', 'mitre_technique', 'created_at']
@@ -66,113 +79,171 @@ export function AlertsPage() {
     URL.revokeObjectURL(url)
   }
 
-  return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <PageHeader title="Alerts" subtitle="Investigate and triage security alerts from Wazuh" />
+  const counts = useMemo(() => {
+    const critical = data.data.filter((a) => a.severity >= 12).length
+    const open = data.data.filter((a) => a.status === 'new' || a.status === 'investigating').length
+    return { total: data.data.length, critical, open }
+  }, [data.data])
 
-      <div className="flex flex-col gap-4 rounded-lg border border-gray-800 bg-soc-panel p-4 md:flex-row md:items-center md:justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow">Detection · Triage</p>
+          <h1 className="mt-1 text-2xl font-medium tracking-[-.03em] text-stone-100">Alert queue</h1>
+        </div>
+        <div className="flex items-center gap-6 text-sm">
+          <span><b className="mr-1.5 font-mono text-lg text-stone-100">{counts.total}</b><span className="text-xs text-stone-500">in queue</span></span>
+          <span><b className="mr-1.5 font-mono text-lg text-[#e08585]">{counts.critical}</b><span className="text-xs text-stone-500">critical</span></span>
+          <span><b className="mr-1.5 font-mono text-lg text-[#d8b17a]">{counts.open}</b><span className="text-xs text-stone-500">open</span></span>
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[240px] flex-1">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-600" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search title, IP, alert ID, MITRE..."
-            className="w-full rounded-md border border-gray-700 bg-gray-900 py-2 pl-10 pr-4 text-sm text-white focus:border-cyan-500 focus:outline-none"
+            placeholder="Search title, IP, alert ID, MITRE technique…"
+            className="control w-full py-2 pl-9"
           />
         </div>
-        <div className="flex flex-wrap gap-3">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
-          >
-            <option value="">All statuses</option>
-            {statusOptions.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-          </select>
-          <select
-            value={severityFilter}
-            onChange={(e) => setSeverityFilter(e.target.value)}
-            className="rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
-          >
-            <option value="">All severities</option>
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
-          <button
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending}
-            className="flex items-center gap-2 rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
-          >
-            {syncMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Sync Wazuh
-          </button>
-          <button onClick={exportCsv} className="flex items-center gap-2 rounded-md bg-cyan-600 px-3 py-2 text-sm text-white hover:bg-cyan-500">
-            <Download className="h-4 w-4" />
-            Export
-          </button>
-        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="control py-2">
+          <option value="">All statuses</option>
+          {statusOptions.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+        </select>
+        <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)} className="control py-2">
+          <option value="">All severities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} className="btn-ghost py-2">
+          {syncMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          Sync Wazuh
+        </button>
+        <button onClick={exportCsv} className="btn-primary py-2">
+          <Download className="h-3.5 w-3.5" /> Export
+        </button>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-gray-800 bg-soc-panel">
-        <table className="w-full text-left text-sm text-gray-300">
-          <thead className="bg-gray-800/50 text-xs uppercase text-gray-400">
-            <tr>
-              <th className="px-4 py-3">ID</th>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3">Severity</th>
-              <th className="px-4 py-3">Source</th>
-              <th className="px-4 py-3">Destination</th>
-              <th className="px-4 py-3">Rule</th>
-              <th className="px-4 py-3">MITRE</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Time</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-800">
+      {/* Workspace: queue + investigation */}
+      <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
+        {/* Queue */}
+        <div className="enterprise-panel overflow-hidden">
+          <div className="panel-header">
+            <span className="panel-title">Live queue</span>
+            <span className="text-[10px] text-stone-600">{filteredAlerts.length} shown</span>
+          </div>
+          <div className="max-h-[62vh] overflow-y-auto">
             {isLoading ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">Loading alerts...</td>
-              </tr>
+              <p className="px-4 py-10 text-center text-sm text-stone-600">Loading alerts…</p>
             ) : filteredAlerts.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">No alerts found.</td>
-              </tr>
+              <p className="px-4 py-10 text-center text-sm text-stone-600">No alerts match the current filters.</p>
             ) : (
-              filteredAlerts.map((alert) => (
-                <tr key={alert.id} className="hover:bg-gray-800/30">
-                  <td className="px-4 py-3 font-mono text-cyan-400">
-                    <Link to={`/alerts/${alert.id}`} className="hover:underline">
-                      #{alert.id}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 font-medium text-white">{alert.title}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs font-semibold ${alert.severity >= 10 ? 'text-red-400' : alert.severity >= 7 ? 'text-orange-400' : 'text-blue-400'}`}>
-                      {severityLabel(alert.severity)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-mono">{alert.source_ip || '—'}</td>
-                  <td className="px-4 py-3 font-mono">{alert.destination_ip || '—'}</td>
-                  <td className="px-4 py-3 font-mono text-gray-400">{alert.rule_id || '—'}</td>
-                  <td className="px-4 py-3 font-mono text-cyan-300">{alert.mitre_technique || '—'}</td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={alert.status}
-                      onChange={(e) => statusMutation.mutate({ id: alert.id, status: e.target.value })}
-                      className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-cyan-500 focus:outline-none"
-                    >
-                      {statusOptions.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{new Date(alert.created_at).toLocaleString()}</td>
-                </tr>
-              ))
+              filteredAlerts.map((alert) => {
+                const active = selected?.id === alert.id
+                return (
+                  <button
+                    key={alert.id}
+                    onClick={() => setSelectedId(alert.id)}
+                    className={`block w-full border-b border-white/[0.05] px-4 py-3 text-left transition-colors ${
+                      active ? 'bg-white/[0.05]' : 'hover:bg-white/[0.02]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className={`pill ${severityClass(alert.severity)}`}>{severityLabel(alert.severity)}</span>
+                        <span className="truncate text-[13px] font-medium text-stone-200">{alert.title}</span>
+                      </div>
+                      <span className="shrink-0 font-mono text-[10px] text-stone-600">
+                        {new Date(alert.created_at).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-4 font-mono text-[11px] text-stone-500">
+                      <span>#{alert.id}</span>
+                      {alert.source_ip && <span>{alert.source_ip}</span>}
+                      {alert.mitre_technique && <span className="text-[#d8b17a]">{alert.mitre_technique}</span>}
+                      <span className="ml-auto capitalize text-stone-600">{alert.status.replace('_', ' ')}</span>
+                    </div>
+                  </button>
+                )
+              })
             )}
-          </tbody>
-        </table>
+          </div>
+        </div>
+
+        {/* Investigation panel */}
+        <div className="enterprise-panel h-fit overflow-hidden">
+          <div className="panel-header">
+            <span className="panel-title">Investigation</span>
+            {selected && (
+              <Link to={`/alerts/${selected.id}`} className="flex items-center gap-1 text-[11px] text-[#d8b17a] transition hover:text-[#e8d2af]">
+                Full case view <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            )}
+          </div>
+          <AnimatePresence mode="wait">
+            {selected ? (
+              <motion.div
+                key={selected.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-base font-medium text-stone-100">{selected.title}</h2>
+                  <span className={`pill ${severityClass(selected.severity)}`}>{severityLabel(selected.severity)}</span>
+                </div>
+                <p className="mt-1 font-mono text-[11px] text-stone-600">{selected.wazuh_alert_id}</p>
+
+                <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4">
+                  <div><dt>Source IP</dt><dd className="font-mono text-sm">{selected.source_ip || '—'}</dd></div>
+                  <div><dt>Destination IP</dt><dd className="font-mono text-sm">{selected.destination_ip || '—'}</dd></div>
+                  <div><dt>Rule</dt><dd className="font-mono text-sm">{selected.rule_id || '—'}</dd></div>
+                  <div><dt>MITRE technique</dt><dd className="font-mono text-sm text-[#d8b17a]">{selected.mitre_technique || '—'}</dd></div>
+                  <div><dt>Detected</dt><dd className="text-sm">{new Date(selected.created_at).toLocaleString()}</dd></div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd>
+                      <select
+                        value={selected.status}
+                        onChange={(e) => statusMutation.mutate({ id: selected.id, status: e.target.value })}
+                        className="control mt-0.5"
+                      >
+                        {statusOptions.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                      </select>
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-6 border-t border-white/[0.07] pt-4">
+                  <p className="eyebrow">Recommended next steps</p>
+                  <ul className="mt-3 space-y-2 text-[13px] text-stone-400">
+                    <li className="flex gap-2"><span className="text-[#c97848]">01</span> Validate source reputation in Threat Intelligence.</li>
+                    <li className="flex gap-2"><span className="text-[#c97848]">02</span> Review related events on the affected asset.</li>
+                    <li className="flex gap-2"><span className="text-[#c97848]">03</span> Escalate to an incident if activity is confirmed.</li>
+                  </ul>
+                  <div className="mt-5 flex gap-2">
+                    <Link to={`/alerts/${selected.id}`} className="btn-primary">Open investigation</Link>
+                    <Link to="/ai" className="btn-ghost">Ask AI analyst</Link>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.p key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 py-10 text-center text-sm text-stone-600">
+                Select an alert to open the investigation panel.
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

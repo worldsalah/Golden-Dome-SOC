@@ -28,7 +28,7 @@ const typeColors: Record<string, string> = {
   condition: '#f59e0b',
   approval: '#ef4444',
   ai_decision: '#8b5cf6',
-  action: '#06b6d4',
+  action: '#c97848',
 }
 
 interface CustomData extends Record<string, unknown> {
@@ -242,17 +242,17 @@ export function PlaybookBuilder({ nodes, onChange }: PlaybookBuilderProps) {
 
   return (
     <div className="flex h-[500px] gap-3">
-      <div className="flex w-56 flex-col gap-2 rounded-md border border-gray-800 bg-gray-950 p-3">
+      <div className="flex w-56 flex-col gap-2 rounded-md border border-white/[0.07] bg-gray-950 p-3">
         <h4 className="text-xs font-semibold text-gray-300">Node Palette</h4>
         <div className="flex flex-col gap-2 overflow-auto">
           {['trigger', 'action', 'condition', 'approval', 'ai_decision', 'enrich_ioc', 'collect_evidence', 'create_incident', 'block_ip', 'notify', 'send_email', 'generate_report', 'end'].map((t) => (
-            <button key={t} onClick={() => addNode(t)} className="rounded border border-gray-800 bg-gray-900 px-2 py-1.5 text-left text-xs text-cyan-400 hover:bg-gray-800">
+            <button key={t} onClick={() => addNode(t)} className="rounded border border-white/[0.07] bg-[#17181b] px-2 py-1.5 text-left text-xs text-[#d8b17a] hover:bg-white/[0.06]">
               + {t}
             </button>
           ))}
         </div>
       </div>
-      <div className="relative flex-1 rounded-md border border-gray-800 bg-gray-950">
+      <div className="relative flex-1 rounded-md border border-white/[0.07] bg-gray-950">
         <ReactFlow
           nodes={flowNodes}
           edges={flowEdges}
@@ -267,10 +267,10 @@ export function PlaybookBuilder({ nodes, onChange }: PlaybookBuilderProps) {
         >
           <Background color="#374151" gap={16} />
           <Controls />
-          <MiniMap className="!bg-gray-900" nodeColor={(n) => typeColors[(n.data as unknown as CustomData).type] || typeColors.action} />
+          <MiniMap className="!bg-[#17181b]" nodeColor={(n) => typeColors[(n.data as unknown as CustomData).type] || typeColors.action} />
         </ReactFlow>
         {(selectedNode || selectedEdgeId) && (
-          <div className="absolute right-3 top-3 w-64 rounded-md border border-gray-700 bg-gray-900 p-3 shadow-lg">
+          <div className="absolute right-3 top-3 w-64 rounded-md border border-white/[0.1] bg-[#17181b] p-3 shadow-lg">
             <div className="mb-2 flex items-center justify-between">
               <h4 className="text-xs font-semibold text-gray-200">{selectedNode ? 'Edit Node' : 'Edge Selected'}</h4>
               <button onClick={deleteSelected} className="text-red-400 hover:text-red-300"><Trash2 className="h-4 w-4" /></button>
@@ -279,15 +279,15 @@ export function PlaybookBuilder({ nodes, onChange }: PlaybookBuilderProps) {
               <div className="space-y-2">
                 <div>
                   <label className="block text-[10px] text-gray-500">ID</label>
-                  <input value={selectedNode.id} disabled className="w-full rounded border border-gray-700 bg-gray-950 px-2 py-1 text-xs text-gray-400" />
+                  <input value={selectedNode.id} disabled className="w-full rounded border border-white/[0.1] bg-gray-950 px-2 py-1 text-xs text-gray-400" />
                 </div>
                 <div>
                   <label className="block text-[10px] text-gray-500">Name</label>
-                  <input value={selectedNode.name} onChange={(e) => updateSelected({ name: e.target.value })} className="w-full rounded border border-gray-700 bg-gray-950 px-2 py-1 text-xs text-white" />
+                  <input value={selectedNode.name} onChange={(e) => updateSelected({ name: e.target.value })} className="w-full rounded border border-white/[0.1] bg-gray-950 px-2 py-1 text-xs text-white" />
                 </div>
                 <div>
                   <label className="block text-[10px] text-gray-500">Type</label>
-                  <select value={selectedNode.type} onChange={(e) => updateSelected({ type: e.target.value })} className="w-full rounded border border-gray-700 bg-gray-950 px-1 py-1 text-xs text-white">
+                  <select value={selectedNode.type} onChange={(e) => updateSelected({ type: e.target.value })} className="w-full rounded border border-white/[0.1] bg-gray-950 px-1 py-1 text-xs text-white">
                     <option value="trigger">trigger</option>
                     <option value="action">action</option>
                     <option value="condition">condition</option>
@@ -317,12 +317,12 @@ export function PlaybookBuilder({ nodes, onChange }: PlaybookBuilderProps) {
                     value={JSON.stringify(selectedNode.config || {}, null, 2)}
                     onChange={(e) => { try { updateSelected({ config: JSON.parse(e.target.value) }) } catch { /* ignore */ } }}
                     rows={4}
-                    className="w-full rounded border border-gray-700 bg-gray-950 px-2 py-1 font-mono text-[10px] text-white"
+                    className="w-full rounded border border-white/[0.1] bg-gray-950 px-2 py-1 font-mono text-[10px] text-white"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] text-gray-500">Condition</label>
-                  <input value={selectedNode.condition || ''} onChange={(e) => updateSelected({ condition: e.target.value || undefined })} placeholder="e.g. severity >= 5" className="w-full rounded border border-gray-700 bg-gray-950 px-2 py-1 text-xs text-white" />
+                  <input value={selectedNode.condition || ''} onChange={(e) => updateSelected({ condition: e.target.value || undefined })} placeholder="e.g. severity >= 5" className="w-full rounded border border-white/[0.1] bg-gray-950 px-2 py-1 text-xs text-white" />
                 </div>
               </div>
             )}

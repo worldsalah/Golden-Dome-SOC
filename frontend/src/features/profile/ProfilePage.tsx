@@ -11,14 +11,14 @@ export function ProfilePage() {
     <div className="space-y-6">
       <PageHeader title="User Profile" subtitle="Manage your account details" />
 
-      <div className="flex items-start gap-6 rounded-lg border border-gray-800 bg-soc-panel p-6">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cyan-500/10">
-          <User className="h-10 w-10 text-cyan-400" />
+      <div className="flex items-start gap-6 rounded-lg border border-white/[0.07] bg-soc-panel p-6">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#d8b17a]/10">
+          <User className="h-10 w-10 text-[#d8b17a]" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-white">{user?.username || 'Analyst'}</h2>
           <p className="text-sm text-gray-400">{user?.email || 'analyst@goldendome.local'}</p>
-          <p className="mt-2 inline-block rounded-full bg-gray-800 px-3 py-1 text-xs font-medium text-cyan-400">
+          <p className="mt-2 inline-block rounded-full bg-[#1c1e22] px-3 py-1 text-xs font-medium text-[#d8b17a]">
             {user?.role ? ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] : 'SOC Analyst'}
           </p>
         </div>

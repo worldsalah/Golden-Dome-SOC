@@ -59,8 +59,8 @@ export function AssetDetailsPage() {
         <ChartCard title="Asset Overview" className="lg:col-span-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="rounded-md bg-cyan-500/10 p-3">
-                <Server className="h-8 w-8 text-cyan-400" />
+              <div className="rounded-md bg-[#d8b17a]/10 p-3">
+                <Server className="h-8 w-8 text-[#d8b17a]" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">{asset.hostname}</h2>
@@ -70,7 +70,7 @@ export function AssetDetailsPage() {
             <button
               onClick={() => riskMutation.mutate()}
               disabled={riskMutation.isPending}
-              className="flex items-center gap-2 rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md border border-white/[0.1] bg-[#1c1e22] px-3 py-2 text-sm text-white hover:bg-white/[0.08] disabled:opacity-50"
             >
               {riskMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
               Recalc Risk
@@ -126,7 +126,7 @@ export function AssetDetailsPage() {
           ) : (
             <div className="space-y-2">
               {vulnerabilities.map((vuln) => (
-                <div key={vuln.id} className="flex items-center justify-between rounded-md bg-gray-900/50 p-3">
+                <div key={vuln.id} className="flex items-center justify-between rounded-md bg-[#17181b]/50 p-3">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="h-5 w-5 text-yellow-400" />
                     <div>
@@ -150,9 +150,9 @@ export function AssetDetailsPage() {
           ) : (
             <div className="space-y-2">
               {alerts.map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between rounded-md bg-gray-900/50 p-3">
+                <div key={alert.id} className="flex items-center justify-between rounded-md bg-[#17181b]/50 p-3">
                   <div className="flex items-center gap-3">
-                    <ShieldCheck className="h-5 w-5 text-cyan-400" />
+                    <ShieldCheck className="h-5 w-5 text-[#d8b17a]" />
                     <div>
                       <p className="text-sm font-medium text-white">{alert.title}</p>
                       <p className="text-xs text-gray-500">{alert.mitre_technique || 'No MITRE'} • {formatDate(alert.created_at)}</p>

@@ -168,9 +168,9 @@ export function DetectionCenterPage() {
       sortable: false,
       renderCell: (params) => (
         <div className="flex items-center gap-1">
-          <button onClick={() => openEdit(params.row as DetectionRule)} className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-cyan-400"><Edit3 className="h-4 w-4" /></button>
-          <button onClick={() => toggleMutation.mutate(params.row.id)} className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-emerald-400"><RefreshCw className="h-4 w-4" /></button>
-          <button onClick={() => deleteMutation.mutate(params.row.id)} className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
+          <button onClick={() => openEdit(params.row as DetectionRule)} className="rounded p-1 text-gray-400 hover:bg-white/[0.06] hover:text-[#d8b17a]"><Edit3 className="h-4 w-4" /></button>
+          <button onClick={() => toggleMutation.mutate(params.row.id)} className="rounded p-1 text-gray-400 hover:bg-white/[0.06] hover:text-emerald-400"><RefreshCw className="h-4 w-4" /></button>
+          <button onClick={() => deleteMutation.mutate(params.row.id)} className="rounded p-1 text-gray-400 hover:bg-white/[0.06] hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
         </div>
       ),
     },
@@ -183,7 +183,7 @@ export function DetectionCenterPage() {
       <PageHeader title="Detection Engineering Center" subtitle="Build, test, and tune SOC detection rules" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon={Shield} label="Total Rules" value={rules.length} color="#06b6d4" />
+        <KpiCard icon={Shield} label="Total Rules" value={rules.length} color="#c97848" />
         <KpiCard icon={CheckCircle2} label="Active Rules" value={rules.filter((r) => r.status === 'active').length} color="#22c55e" />
         <KpiCard icon={XCircle} label="Disabled" value={rules.filter((r) => r.status === 'disabled').length} color="#ef4444" />
         <KpiCard icon={AlertTriangle} label="MITRE Coverage" value={`${coverage?.coverage_percentage || 0}%`} color="#f59e0b" />
@@ -193,17 +193,17 @@ export function DetectionCenterPage() {
         <ChartCard title="MITRE ATT&CK Coverage by Tactic" className="lg:col-span-2">
           <div className="grid gap-3 pt-2 sm:grid-cols-2">
             {Object.entries(coverageByTactic).map(([tactic, count]) => (
-              <div key={tactic} className="rounded-md bg-gray-900/50 p-3">
+              <div key={tactic} className="rounded-md bg-[#17181b]/50 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-200">{tactic}</span>
-                  <span className="text-xs text-cyan-400">{count as number} techniques</span>
+                  <span className="text-xs text-[#d8b17a]">{count as number} techniques</span>
                 </div>
-                <div className="mt-2 h-2 rounded-full bg-gray-800">
+                <div className="mt-2 h-2 rounded-full bg-[#1c1e22]">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.min(100, ((count as number) / 5) * 100)}%` }}
                     transition={{ duration: 0.8 }}
-                    className="h-2 rounded-full bg-cyan-500"
+                    className="h-2 rounded-full bg-[#c97848]"
                   />
                 </div>
               </div>
@@ -215,7 +215,7 @@ export function DetectionCenterPage() {
           <h3 className="mb-3 text-sm font-semibold text-gray-200">Detection Categories</h3>
           <div className="space-y-2">
             {CATEGORIES.map((cat) => (
-              <div key={cat} className="flex items-center justify-between rounded-md bg-gray-900/50 px-3 py-2">
+              <div key={cat} className="flex items-center justify-between rounded-md bg-[#17181b]/50 px-3 py-2">
                 <span className="text-sm text-gray-300">{cat}</span>
                 <span className="text-xs text-gray-500">{rules.filter((r) => r.category === cat).length}</span>
               </div>
@@ -224,7 +224,7 @@ export function DetectionCenterPage() {
         </AnimatedCard>
       </div>
 
-      <ChartCard title="Detection Rules" right={<button onClick={openCreate} className="flex items-center gap-1 rounded-md bg-cyan-600 px-3 py-1.5 text-sm text-white hover:bg-cyan-500"><Plus className="h-4 w-4" /> New Rule</button>}>
+      <ChartCard title="Detection Rules" right={<button onClick={openCreate} className="flex items-center gap-1 rounded-md bg-[#7c5540] px-3 py-1.5 text-sm text-white hover:bg-[#8d6350]"><Plus className="h-4 w-4" /> New Rule</button>}>
         <div className="mt-2 max-h-[520px]">
           <DataWorkspace rows={rules} columns={columns} />
         </div>
@@ -232,44 +232,44 @@ export function DetectionCenterPage() {
 
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-2xl rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-2xl rounded-xl border border-white/[0.1] bg-[#17181b] p-6 shadow-2xl">
             <h3 className="mb-4 text-lg font-semibold text-white">{selectedRule ? 'Edit Rule' : 'Create Detection Rule'}</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs text-gray-400">Name</label>
-                <input value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                <input value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-md border border-white/[0.1] bg-gray-950 px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-400">Severity</label>
-                <input type="number" min={1} max={15} value={formData.severity || 5} onChange={(e) => setFormData({ ...formData, severity: parseInt(e.target.value) })} className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                <input type="number" min={1} max={15} value={formData.severity || 5} onChange={(e) => setFormData({ ...formData, severity: parseInt(e.target.value) })} className="w-full rounded-md border border-white/[0.1] bg-gray-950 px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-400">Category</label>
-                <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none">
+                <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full rounded-md border border-white/[0.1] bg-gray-950 px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none">
                   {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-400">Source</label>
-                <select value={formData.source} onChange={(e) => setFormData({ ...formData, source: e.target.value })} className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none">
+                <select value={formData.source} onChange={(e) => setFormData({ ...formData, source: e.target.value })} className="w-full rounded-md border border-white/[0.1] bg-gray-950 px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none">
                   {SOURCES.map((s) => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs text-gray-400">MITRE Technique ID</label>
-                <input value={formData.mitre_attack_id || ''} onChange={(e) => setFormData({ ...formData, mitre_attack_id: e.target.value })} placeholder="e.g. T1110" className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                <input value={formData.mitre_attack_id || ''} onChange={(e) => setFormData({ ...formData, mitre_attack_id: e.target.value })} placeholder="e.g. T1110" className="w-full rounded-md border border-white/[0.1] bg-gray-950 px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs text-gray-400">Description</label>
-                <textarea value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                <textarea value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} className="w-full rounded-md border border-white/[0.1] bg-gray-950 px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs text-gray-400">Logic (Python expression using <code>event</code>)</label>
-                <textarea value={formData.logic || ''} onChange={(e) => setFormData({ ...formData, logic: e.target.value })} rows={3} placeholder="event.get('rule', {}).get('id') == '200001'" className="font-mono w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                <textarea value={formData.logic || ''} onChange={(e) => setFormData({ ...formData, logic: e.target.value })} rows={3} placeholder="event.get('rule', {}).get('id') == '200001'" className="font-mono w-full rounded-md border border-white/[0.1] bg-gray-950 px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none" />
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs text-gray-400">Status</label>
-                <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as DetectionRule['status'] })} className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none">
+                <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as DetectionRule['status'] })} className="w-full rounded-md border border-white/[0.1] bg-gray-950 px-3 py-2 text-sm text-white focus:border-[#b98947]/60 focus:outline-none">
                   <option>active</option>
                   <option>disabled</option>
                   <option>draft</option>
@@ -280,7 +280,7 @@ export function DetectionCenterPage() {
 
             {selectedRule && (
               <>
-                <div className="mt-4 rounded-md border border-gray-700 bg-gray-950 p-3">
+                <div className="mt-4 rounded-md border border-white/[0.1] bg-gray-950 p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <label className="text-xs text-gray-400">Test Rule</label>
                     <button
@@ -288,13 +288,13 @@ export function DetectionCenterPage() {
                         const result = await getSigmaExport(selectedRule.id)
                         setSigmaYaml(result.sigma_yaml)
                       }}
-                      className="rounded-md bg-violet-600 px-2 py-1 text-xs text-white hover:bg-violet-500"
+                      className="rounded-md bg-[#6d5a96] px-2 py-1 text-xs text-white hover:bg-[#7d69ab]"
                     >
                       Export Sigma
                     </button>
                   </div>
                   <div className="flex gap-2">
-                    <textarea value={testEvent} onChange={(e) => setTestEvent(e.target.value)} rows={2} className="font-mono flex-1 rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none" />
+                    <textarea value={testEvent} onChange={(e) => setTestEvent(e.target.value)} rows={2} className="font-mono flex-1 rounded-md border border-white/[0.1] bg-[#17181b] px-3 py-2 text-xs text-white focus:border-[#b98947]/60 focus:outline-none" />
                     <button
                       onClick={() => {
                         try {
@@ -315,7 +315,7 @@ export function DetectionCenterPage() {
                 </div>
 
                 {sigmaYaml && (
-                  <div className="mt-4 rounded-md border border-gray-700 bg-gray-950 p-3">
+                  <div className="mt-4 rounded-md border border-white/[0.1] bg-gray-950 p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <label className="text-xs text-gray-400">Sigma Rule Export</label>
                       <button
@@ -328,18 +328,18 @@ export function DetectionCenterPage() {
                           a.click()
                           URL.revokeObjectURL(url)
                         }}
-                        className="rounded-md bg-gray-800 px-2 py-1 text-xs text-white hover:bg-gray-700"
+                        className="rounded-md bg-[#1c1e22] px-2 py-1 text-xs text-white hover:bg-white/[0.08]"
                       >
                         Download
                       </button>
                     </div>
-                    <pre className="max-h-48 overflow-auto rounded-md bg-gray-900 p-2 text-xs font-mono text-gray-300">{sigmaYaml}</pre>
+                    <pre className="max-h-48 overflow-auto rounded-md bg-[#17181b] p-2 text-xs font-mono text-gray-300">{sigmaYaml}</pre>
                   </div>
                 )}
 
-                <div className="mt-4 rounded-md border border-gray-700 bg-gray-950 p-3">
+                <div className="mt-4 rounded-md border border-white/[0.1] bg-gray-950 p-3">
                   <label className="mb-1 block text-xs text-gray-400">Scenario Evaluation (False Positive Analysis)</label>
-                  <textarea value={scenariosText} onChange={(e) => setScenariosText(e.target.value)} rows={5} className="font-mono w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none" />
+                  <textarea value={scenariosText} onChange={(e) => setScenariosText(e.target.value)} rows={5} className="font-mono w-full rounded-md border border-white/[0.1] bg-[#17181b] px-3 py-2 text-xs text-white focus:border-[#b98947]/60 focus:outline-none" />
                   <button
                     onClick={async () => {
                       try {
@@ -350,7 +350,7 @@ export function DetectionCenterPage() {
                         setScenarioResult({ total_scenarios: 0, true_positives: 0, false_positives: 0, false_negatives: 0, precision: 0, recall: 0, recommendation: 'Invalid scenario JSON', results: [] })
                       }
                     }}
-                    className="mt-2 rounded-md bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-500"
+                    className="mt-2 rounded-md bg-[#7c5540] px-3 py-1.5 text-xs text-white hover:bg-[#8d6350]"
                   >
                     Evaluate Scenarios
                   </button>
@@ -370,8 +370,8 @@ export function DetectionCenterPage() {
             )}
 
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setIsEditing(false)} className="rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Cancel</button>
-              <button onClick={handleSave} className="rounded-md bg-cyan-600 px-4 py-2 text-sm text-white hover:bg-cyan-500">Save Rule</button>
+              <button onClick={() => setIsEditing(false)} className="rounded-md border border-white/[0.1] bg-[#1c1e22] px-4 py-2 text-sm text-gray-300 hover:bg-white/[0.08]">Cancel</button>
+              <button onClick={handleSave} className="rounded-md bg-[#7c5540] px-4 py-2 text-sm text-white hover:bg-[#8d6350]">Save Rule</button>
             </div>
           </motion.div>
         </div>
@@ -382,7 +382,7 @@ export function DetectionCenterPage() {
 
 function KpiCard({ icon: Icon, label, value, color }: { icon: typeof Shield; label: string; value: number | string; color: string }) {
   return (
-    <div className="rounded-xl border border-gray-800 bg-soc-panel/80 p-4">
+    <div className="rounded-xl border border-white/[0.07] bg-soc-panel/80 p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase text-gray-500">{label}</p>
