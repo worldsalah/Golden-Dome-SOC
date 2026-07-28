@@ -18,6 +18,7 @@ import { ReportsPage } from '@/features/reports/ReportsPage'
 import { AiAssistantPage } from '@/features/ai/AiAssistantPage'
 import { DetectionCenterPage } from '@/features/detection-center/DetectionCenterPage'
 import { ValidationCenterPage } from '@/features/validation/ValidationCenterPage'
+import { AttackCoveragePage } from '@/features/validation/AttackCoveragePage'
 import { ThreatIntelPage } from '@/features/threat-intel/ThreatIntelPage'
 import { RiskCenterPage } from '@/features/risk/RiskCenterPage'
 import { VulnerabilityManagementPage } from '@/features/vulnerabilities/VulnerabilityManagementPage'
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route path="alerts/:id" element={<AlertDetailsPage />} />
         <Route path="detection-center" element={<DetectionCenterPage />} />
         <Route path="validation" element={<ValidationCenterPage />} />
+        <Route path="attack-coverage" element={<AttackCoveragePage />} />
         <Route path="incidents" element={<IncidentsPage />} />
         <Route path="incidents/:id" element={<IncidentDetailsPage />} />
         <Route path="assets" element={<AssetsPage />} />

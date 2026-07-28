@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser, get_db
-from app.schemas.validation import ValidationCenterResponse
+from app.schemas.validation import AttackCoverageResponse, ValidationCenterResponse
 from app.services.validation_service import ValidationService
 from app.services.wazuh_service import WazuhServiceError
 
@@ -36,3 +36,21 @@ async def get_validation_center(
             detail=f"Wazuh API/Indexer unreachable: {exc}",
         )
     return ValidationCenterResponse(**result)
+
+
+@router.get("/coverage", response_model=AttackCoverageResponse)
+async def get_attack_coverage(
+    current_user: CurrentUser,
+    service: ServiceDep,
+    group: str = Query("goldendome", description="Wazuh rule group to validate"),
+):
+    """ATT&CK technique coverage cross-referenced against real Wazuh detections."""
+    try:
+        result = await service.get_attack_coverage(group=group)
+    except WazuhServiceError as exc:
+        logger.exception("Attack coverage failed to reach Wazuh")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Wazuh API/Indexer unreachable: {exc}",
+        )
+    return AttackCoverageResponse(**result)

@@ -442,6 +442,32 @@ export async function getValidationCenter(group = 'goldendome') {
   return data as { summary: ValidationSummary; detections: DetectionValidationEntry[] }
 }
 
+export interface AttackCoverageTechnique {
+  technique_id: string
+  name: string
+  tactic: string
+  state: 'validated' | 'implemented' | 'failed' | 'missing_detection'
+  mapped_rule_count: number
+  mapped_rule_ids: string[]
+  last_tested: string | null
+  coverage_percentage: number
+}
+
+export interface AttackCoverageResponse {
+  techniques: AttackCoverageTechnique[]
+  tactic_summary: Record<string, { total: number; validated: number; implemented: number; failed: number; missing_detection: number }>
+  total_techniques: number
+  validated_techniques: number
+  overall_coverage_percentage: number
+  data_source: string
+  generated_at: string
+}
+
+export async function getAttackCoverage(group = 'goldendome') {
+  const { data } = await apiClient.get('/validation/coverage', { params: { group } })
+  return data as AttackCoverageResponse
+}
+
 // Detection Rules
 export async function listDetectionRules(params?: { page?: number; limit?: number; category?: string; status?: string; search?: string }) {
   const { data } = await apiClient.get('/detection-rules', { params })

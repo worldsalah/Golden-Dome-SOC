@@ -44,6 +44,7 @@ const navSections: { label: string; items: { name: string; path: string; icon: t
     items: [
       { name: 'Detection Center', path: '/detection-center', icon: Crosshair },
       { name: 'Validation Center', path: '/validation', icon: ShieldQuestion },
+      { name: 'ATT&CK Coverage', path: '/attack-coverage', icon: Network },
       { name: 'Threat Intelligence', path: '/threat-intel', icon: Radar },
       { name: 'MITRE ATT&CK', path: '/mitre', icon: Network },
       { name: 'Risk Center', path: '/risk', icon: Gauge },

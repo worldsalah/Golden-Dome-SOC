@@ -120,6 +120,77 @@ class ValidationService:
             return "failed"
         return "validated"
 
+    async def get_attack_coverage(self, group: str = CUSTOM_RULE_GROUP) -> dict[str, Any]:
+        """Cross-reference real Wazuh detections against the real MITRE technique catalog.
+
+        implemented: at least one enabled rule maps to the technique
+        validated:   that technique has fired and matches with an acceptable FP rate
+        failed:      the mapped rule(s) have a high false-positive rate
+        missing:     no rule in the group maps to this technique at all
+        """
+        validation = await self.get_validation_center(group=group)
+        detections = validation["detections"]
+
+        by_technique: dict[str, list[dict[str, Any]]] = {}
+        for d in detections:
+            tid = d["mitre_technique"]
+            if tid:
+                by_technique.setdefault(tid, []).append(d)
+
+        result = await self.db.execute(select(MITRETechnique))
+        techniques = result.scalars().all()
+
+        entries = []
+        tactic_totals: dict[str, dict[str, int]] = {}
+        for tech in techniques:
+            mapped = by_technique.get(tech.technique_id, [])
+            last_trigger = None
+            for d in mapped:
+                if d["last_trigger"] and (last_trigger is None or d["last_trigger"] > last_trigger):
+                    last_trigger = d["last_trigger"]
+
+            if not mapped:
+                state = "missing_detection"
+            elif any(d["validation_status"] == "failed" for d in mapped):
+                state = "failed"
+            elif any(d["validation_status"] == "validated" for d in mapped):
+                state = "validated"
+            else:
+                state = "implemented"
+
+            coverage_pct = max((d["coverage_percentage"] for d in mapped), default=0.0)
+
+            entry = {
+                "technique_id": tech.technique_id,
+                "name": tech.name,
+                "tactic": tech.tactic,
+                "state": state,
+                "mapped_rule_count": len(mapped),
+                "mapped_rule_ids": [d["rule_id"] for d in mapped],
+                "last_tested": last_trigger,
+                "coverage_percentage": coverage_pct,
+            }
+            entries.append(entry)
+
+            for tactic in [t.strip() for t in tech.tactic.split(",")]:
+                bucket = tactic_totals.setdefault(tactic, {"total": 0, "validated": 0, "implemented": 0, "failed": 0, "missing_detection": 0})
+                bucket["total"] += 1
+                bucket[state] += 1
+
+        total = len(entries)
+        validated_count = sum(1 for e in entries if e["state"] == "validated")
+        overall_coverage = round((validated_count / total * 100), 1) if total else 0.0
+
+        return {
+            "techniques": entries,
+            "tactic_summary": tactic_totals,
+            "total_techniques": total,
+            "validated_techniques": validated_count,
+            "overall_coverage_percentage": overall_coverage,
+            "data_source": validation["summary"]["data_source"],
+            "generated_at": validation["summary"]["generated_at"],
+        }
+
     async def get_validation_center(self, group: str = CUSTOM_RULE_GROUP) -> dict[str, Any]:
         try:
             rules_response = await self.wazuh.get_rules(limit=500, group=group)

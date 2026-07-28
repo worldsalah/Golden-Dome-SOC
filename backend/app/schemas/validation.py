@@ -34,3 +34,24 @@ class ValidationSummary(BaseModel):
 class ValidationCenterResponse(BaseModel):
     summary: ValidationSummary
     detections: list[DetectionValidationEntry]
+
+
+class AttackCoverageTechnique(BaseModel):
+    technique_id: str
+    name: str
+    tactic: str
+    state: str  # validated | implemented | failed | missing_detection
+    mapped_rule_count: int
+    mapped_rule_ids: list[str]
+    last_tested: datetime | None = None
+    coverage_percentage: float
+
+
+class AttackCoverageResponse(BaseModel):
+    techniques: list[AttackCoverageTechnique]
+    tactic_summary: dict[str, dict[str, int]]
+    total_techniques: int
+    validated_techniques: int
+    overall_coverage_percentage: float
+    data_source: str
+    generated_at: datetime
