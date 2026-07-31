@@ -14,7 +14,9 @@ from app.services.ai_engine.knowledge_base import KnowledgeBase
 from app.services.ai_engine.model_manager import ModelManager
 from app.services.ai_engine.prompts import (
     ALERT_ANALYSIS_PROMPT,
+    ATTACK_CHAIN_PROMPT,
     DAILY_REPORT_PROMPT,
+    DETECTION_ENGINEER_PROMPT,
     INCIDENT_REPORT_PROMPT,
     PLAYBOOK_GENERATOR_PROMPT,
     SYSTEM_PROMPT,
@@ -481,6 +483,164 @@ class SentinelAnalysisService:
         auth = await detector.analyze_auth_patterns(self.db, hours=hours)
         traffic = await detector.analyze_traffic_patterns(self.db, hours=hours)
         return {"auth": auth, "traffic": traffic}
+
+    async def analyze_attack_chain(self, incident_id: int, user_id: int | None = None) -> dict[str, Any]:
+        """Reconstruct the attack chain for an incident using AI."""
+        incident = await self.db.get(Incident, incident_id)
+        if not incident:
+            raise ValueError(f"Incident {incident_id} not found")
+        await self.db.refresh(incident, ["alerts", "timeline"])
+
+        alerts = sorted(incident.alerts, key=lambda a: a.created_at)
+        alert_data = [
+            {
+                "id": a.id,
+                "title": a.title,
+                "severity": a.severity,
+                "source_ip": a.source_ip,
+                "destination_ip": a.destination_ip,
+                "mitre_technique": a.mitre_technique,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+            }
+            for a in alerts
+        ]
+
+        ti_data: dict[str, Any] = {}
+        for alert in alerts:
+            if alert.source_ip and alert.source_ip not in ti_data:
+                ti_data[alert.source_ip] = await self.enricher.enrich(alert.source_ip, "ip")
+
+        asset_ids = {a.asset_id for a in alerts if a.asset_id}
+        assets_info = []
+        for aid in asset_ids:
+            asset = await self.db.get(Asset, aid)
+            if asset:
+                assets_info.append({
+                    "hostname": asset.hostname,
+                    "ip": asset.ip_address,
+                    "type": asset.type,
+                    "os": asset.operating_system,
+                    "criticality": asset.criticality,
+                })
+
+        prompt = ATTACK_CHAIN_PROMPT.substitute(
+            incident=json.dumps({"id": incident.id, "name": incident.name, "severity": incident.severity, "description": incident.description}, default=str),
+            alerts=json.dumps(alert_data, default=str),
+            threat_intel=json.dumps(ti_data, default=str),
+            assets=json.dumps(assets_info, default=str),
+        )
+        response = await self.model.generate(prompt=prompt, system=SYSTEM_PROMPT, format="json")
+        parsed = self._safe_parse(response["raw"], required_keys=["attack_chain_summary"])
+        if not parsed:
+            parsed = {
+                "attack_chain_summary": f"Attack chain analysis for incident {incident.name}. Insufficient data for full reconstruction.",
+                "kill_chain_phases": [
+                    {"phase": "Unknown", "description": "Could not determine phase from available evidence", "evidence": [a["id"] for a in alert_data]}
+                ],
+                "attacker_profile": {"sophistication": "unknown", "likely_threat_actor": "Unknown", "motivation": "Unknown", "ttps_observed": []},
+                "evidence_summary": {"key_findings": [], "confidence_level": "low", "gaps_in_evidence": ["Full attack chain could not be reconstructed"]},
+                "remediation_priority": [],
+            }
+        parsed["incident_id"] = incident.id
+        parsed["llm_source"] = response.get("source", "unknown")
+        await self._log_query(
+            "/ai/attack-chain",
+            {"incident_id": incident_id},
+            parsed.get("attack_chain_summary", ""),
+            response.get("source", "unknown"),
+            user_id=user_id,
+        )
+        return parsed
+
+    async def review_detection(self, alert_id: int, user_id: int | None = None) -> dict[str, Any]:
+        """AI Detection Engineer: review an alert for FP, rule improvements, and MITRE gaps."""
+        alert = await self.db.get(Alert, alert_id)
+        if not alert:
+            raise ValueError(f"Alert {alert_id} not found")
+
+        alert_data = json.dumps({
+            "id": alert.id,
+            "title": alert.title,
+            "severity": alert.severity,
+            "source_ip": alert.source_ip,
+            "destination_ip": alert.destination_ip,
+            "rule_id": alert.rule_id,
+            "mitre_technique": alert.mitre_technique,
+            "status": alert.status,
+            "description": alert.description,
+            "raw_log": (alert.raw_log or "")[:1000],
+        }, default=str)
+
+        rule_data = "No detection rule linked"
+        if alert.rule_id:
+            from app.database.models import DetectionRule
+            result = await self.db.execute(
+                select(DetectionRule).where(DetectionRule.name == alert.rule_id).limit(1)
+            )
+            rule = result.scalar_one_or_none()
+            if rule:
+                rule_data = json.dumps({
+                    "name": rule.name,
+                    "description": rule.description,
+                    "severity": rule.severity,
+                    "category": rule.category,
+                    "logic": rule.logic,
+                    "mitre_attack_id": rule.mitre_attack_id,
+                    "status": rule.status,
+                }, default=str)
+
+        stats_result = await self.db.execute(
+            select(Alert).where(Alert.rule_id == alert.rule_id).order_by(Alert.created_at.desc()).limit(50)
+        )
+        historical = stats_result.scalars().all()
+        stats = json.dumps({
+            "total_alerts_for_rule": len(historical),
+            "resolved": sum(1 for a in historical if a.status == "resolved"),
+            "false_positive": sum(1 for a in historical if a.status == "false_positive"),
+            "avg_severity": sum(a.severity for a in historical) / max(len(historical), 1),
+        }, default=str)
+
+        prompt = DETECTION_ENGINEER_PROMPT.substitute(
+            alert_data=alert_data,
+            rule_data=rule_data,
+            stats=stats,
+        )
+        response = await self.model.generate(prompt=prompt, system=SYSTEM_PROMPT, format="json")
+        parsed = self._safe_parse(response["raw"], required_keys=["false_positive_analysis"])
+        if not parsed:
+            parsed = {
+                "false_positive_analysis": {
+                    "is_likely_fp": False,
+                    "confidence": 50,
+                    "reasoning": "Unable to determine FP status from available data.",
+                    "fp_indicators": [],
+                    "legitimate_indicators": [],
+                },
+                "rule_improvement_suggestions": [],
+                "mitre_coverage": {
+                    "technique_covered": alert.mitre_technique,
+                    "related_techniques": [],
+                    "missing_detection_gaps": [],
+                    "recommended_new_rules": [],
+                },
+                "tuning_recommendations": {
+                    "severity_adjustment": "maintain",
+                    "reasoning": "Insufficient data for tuning recommendation.",
+                    "filter_suggestions": [],
+                    "whitelist_suggestions": [],
+                },
+                "overall_assessment": "Detection engineering review completed with limited data.",
+            }
+        parsed["alert_id"] = alert.id
+        parsed["llm_source"] = response.get("source", "unknown")
+        await self._log_query(
+            "/ai/detection-review",
+            {"alert_id": alert_id},
+            parsed.get("overall_assessment", ""),
+            response.get("source", "unknown"),
+            user_id=user_id,
+        )
+        return parsed
 
     async def _log_query(
         self,

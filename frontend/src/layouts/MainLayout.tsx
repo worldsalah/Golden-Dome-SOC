@@ -1,25 +1,34 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
 import {
+  Activity,
   AlertTriangle,
+  Award,
   Bell,
   BrainCircuit,
-  Bug,
+  Building2,
   ChevronLeft,
   Crosshair,
   FileText,
+  Filter,
   Gauge,
+  Hotel,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
   Network,
+  Plug,
+  Play,
   Radar,
   Moon,
   Search,
   Server,
   Settings,
   ShieldAlert,
+  ShieldCheck,
   ShieldQuestion,
   Sun,
   User,
@@ -28,6 +37,7 @@ import {
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
 import { ROLE_LABELS } from '@/utils/roles'
+import { getLatestAlerts, globalSearch } from '@/services/api'
 
 const navSections: { label: string; items: { name: string; path: string; icon: typeof LayoutDashboard }[] }[] = [
   {
@@ -45,6 +55,12 @@ const navSections: { label: string; items: { name: string; path: string; icon: t
       { name: 'Detection Center', path: '/detection-center', icon: Crosshair },
       { name: 'Validation Center', path: '/validation', icon: ShieldQuestion },
       { name: 'ATT&CK Coverage', path: '/attack-coverage', icon: Network },
+      { name: 'False Positive Reduction', path: '/false-positive-reduction', icon: Filter },
+      { name: 'Performance Metrics', path: '/detection-performance', icon: Activity },
+      { name: 'SOC Health Score', path: '/soc-health-score', icon: Award },
+      { name: 'Validation Reports', path: '/validation-reports', icon: FileText },
+      { name: 'Evidence Viewer', path: '/evidence-viewer', icon: Search },
+      { name: 'Replay Engine', path: '/replay-engine', icon: Play },
       { name: 'Threat Intelligence', path: '/threat-intel', icon: Radar },
       { name: 'MITRE ATT&CK', path: '/mitre', icon: Network },
       { name: 'Risk Center', path: '/risk', icon: Gauge },
@@ -54,14 +70,19 @@ const navSections: { label: string; items: { name: string; path: string; icon: t
     label: 'Estate',
     items: [
       { name: 'Assets', path: '/assets', icon: Server },
-      { name: 'Vulnerabilities', path: '/vulnerabilities', icon: Bug },
+      { name: 'Connectors', path: '/connectors', icon: Plug },
       { name: 'SOAR Automation', path: '/soar', icon: Workflow },
+      { name: 'Posture', path: '/posture', icon: ShieldCheck },
+      { name: 'Hotel Security', path: '/hotel-security', icon: Hotel },
     ],
   },
   {
     label: 'Governance',
     items: [
       { name: 'Reports', path: '/reports', icon: FileText },
+      { name: 'Security Center', path: '/security-center', icon: KeyRound },
+      { name: 'Onboarding', path: '/onboarding', icon: Building2 },
+      { name: 'Deployment', path: '/deployment', icon: Server },
       { name: 'Settings', path: '/settings', icon: Settings },
     ],
   },
@@ -98,11 +119,44 @@ export function MainLayout() {
     navigate('/login')
   }
 
-  const notifications = [
-    { id: 1, title: 'Critical alert: Brute force detected', time: '2 min ago', read: false },
-    { id: 2, title: 'Incident INC-001 assigned to you', time: '15 min ago', read: false },
-    { id: 3, title: 'Asset Windows-Server-2019 offline', time: '1 hr ago', read: true },
-  ]
+  const { data: latestData } = useQuery({
+    queryKey: ['latest-alerts-nav'],
+    queryFn: () => getLatestAlerts(5),
+    refetchInterval: 10_000,
+  })
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<null | { total: number; query: string; results: { alerts: { id: string; title: string; severity: number; timestamp: string; source_ip: string; agent: string; type: string }[]; agents: { id: string; name: string; ip: string; status: string; type: string }[]; vulnerabilities: { id: string; cve: string; package: string; agent: string; type: string }[]; techniques: Record<string, unknown>[] } }>(null)
+
+  const notifications = (latestData?.alerts || []).map((alert: Record<string, unknown>, i: number) => {
+    const rule = (alert as Record<string, Record<string, unknown>>).rule || {}
+    const level = Number(rule.level || 1)
+    return {
+      id: i + 1,
+      title: String(rule.description || 'Unknown alert'),
+      time: String((alert as Record<string, unknown>).timestamp || '').slice(11, 19),
+      read: i > 0,
+      level,
+    }
+  })
+
+  const unreadCount = notifications.filter((n) => !n.read).length
+
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults(null)
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const results = await globalSearch(searchQuery, 20)
+        setSearchResults(results)
+      } catch {
+        setSearchResults(null)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a0b] text-stone-200">
@@ -205,12 +259,57 @@ export function MainLayout() {
               <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-600" />
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search alerts, incidents, assets, indicators…"
                 className="w-full rounded-md border border-white/[0.08] bg-[#131417] py-1.5 pl-9 pr-14 text-xs text-stone-300 placeholder-stone-600 outline-none transition focus:border-[#b98947]/50"
               />
               <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-white/[0.1] px-1.5 py-0.5 text-[9px] font-medium text-stone-600">
                 ⌘K
               </kbd>
+              {searchResults && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 max-h-96 overflow-y-auto rounded-lg border border-white/[0.1] bg-[#141518] shadow-2xl shadow-black/60">
+                  <div className="panel-header">
+                    <span className="panel-title">Search results ({searchResults.total})</span>
+                  </div>
+                  {searchResults.total === 0 ? (
+                    <p className="px-4 py-3 text-xs text-stone-600">No results found for "{searchResults.query || searchQuery}"</p>
+                  ) : (
+                    <>
+                      {searchResults.results.alerts.length > 0 && (
+                        <div className="border-b border-white/[0.05] px-4 py-2">
+                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-stone-600">Alerts</p>
+                          {searchResults.results.alerts.slice(0, 5).map((a) => (
+                            <Link key={a.id} to="/alerts" className="block py-1 text-xs text-stone-300 hover:text-stone-100">
+                              <span className="font-mono text-stone-500">L{a.severity}</span> {a.title} {a.source_ip && <span className="text-stone-600">· {a.source_ip}</span>}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                      {searchResults.results.agents.length > 0 && (
+                        <div className="border-b border-white/[0.05] px-4 py-2">
+                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-stone-600">Agents</p>
+                          {searchResults.results.agents.slice(0, 5).map((a) => (
+                            <Link key={a.id} to="/assets" className="block py-1 text-xs text-stone-300 hover:text-stone-100">
+                              {a.name} <span className="text-stone-600">· {a.ip}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                      {searchResults.results.vulnerabilities.length > 0 && (
+                        <div className="px-4 py-2">
+                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-stone-600">Vulnerabilities</p>
+                          {searchResults.results.vulnerabilities.slice(0, 5).map((v) => (
+                            <Link key={v.id} to="/vulnerabilities" className="block py-1 text-xs text-stone-300 hover:text-stone-100">
+                              {v.cve} <span className="text-stone-600">· {v.package}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -237,7 +336,7 @@ export function MainLayout() {
             <div className="relative">
               <button onClick={() => setNotificationsOpen((v) => !v)} className="icon-button relative">
                 <Bell className="h-3.5 w-3.5" />
-                <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#b94747]" />
+                {unreadCount > 0 && <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#b94747]" />}
               </button>
               <AnimatePresence>
                 {notificationsOpen && (
@@ -250,17 +349,24 @@ export function MainLayout() {
                   >
                     <div className="panel-header">
                       <span className="panel-title">Notifications</span>
-                      <span className="pill sev-critical">2 new</span>
+                      {unreadCount > 0 && <span className="pill sev-critical">{unreadCount} new</span>}
                     </div>
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        className={`border-b border-white/[0.05] px-4 py-2.5 transition hover:bg-white/[0.03] ${n.read ? 'opacity-50' : ''}`}
-                      >
-                        <p className="text-xs text-stone-300">{n.title}</p>
-                        <p className="mt-0.5 text-[10px] text-stone-600">{n.time}</p>
-                      </div>
-                    ))}
+                    {notifications.length === 0 ? (
+                      <p className="px-4 py-3 text-xs text-stone-600">No recent alerts</p>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className={`border-b border-white/[0.05] px-4 py-2.5 transition hover:bg-white/[0.03] ${n.read ? 'opacity-50' : ''}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: n.level >= 13 ? '#b94747' : n.level >= 10 ? '#c97929' : '#b08a2e' }} />
+                            <p className="text-xs text-stone-300">{n.title}</p>
+                          </div>
+                          <p className="mt-0.5 pl-3.5 text-[10px] text-stone-600">{n.time}</p>
+                        </div>
+                      ))
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

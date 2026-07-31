@@ -135,7 +135,7 @@ export function ValidationCenterPage() {
                   <td className="font-mono text-[#d8b17a]">{d.rule_id}</td>
                   <td className="font-mono text-xs text-stone-400">{d.mitre_technique ?? '—'}</td>
                   <td className="font-mono text-stone-300">{d.severity}</td>
-                  <td className="font-mono tabular-nums text-stone-300">{d.alert_count.toLocaleString()}</td>
+                  <td className="font-mono tabular-nums text-stone-300">{(d.alert_count ?? 0).toLocaleString()}</td>
                   <td className="text-xs text-stone-500">{d.last_trigger ? formatDate(d.last_trigger) : 'Never'}</td>
                   <td>
                     <span className="pill" style={{ color: d.status === 'enabled' ? '#7cc9a5' : '#78716c' }}>
@@ -143,13 +143,13 @@ export function ValidationCenterPage() {
                       {d.status}
                     </span>
                   </td>
-                  <td><span className={`pill ${statusPill[d.validation_status]}`}>{d.validation_status.replace('_', ' ')}</span></td>
+                  <td><span className={`pill ${statusPill[d.validation_status ?? '']}`}>{(d.validation_status ?? '').replace('_', ' ')}</span></td>
                   <td>
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-14 overflow-hidden rounded-full bg-white/[0.08]">
-                        <div className="h-full rounded-full bg-[#c97848]" style={{ width: `${d.coverage_percentage}%` }} />
+                        <div className="h-full rounded-full bg-[#c97848]" style={{ width: `${d.coverage_percentage ?? 0}%` }} />
                       </div>
-                      <span className="font-mono text-[11px] text-stone-400">{d.coverage_percentage.toFixed(0)}%</span>
+                      <span className="font-mono text-[11px] text-stone-400">{(d.coverage_percentage ?? 0).toFixed(0)}%</span>
                     </div>
                   </td>
                   <td className="font-mono text-xs text-stone-300">

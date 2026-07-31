@@ -55,6 +55,29 @@ def decode_token(token: str) -> dict[str, Any] | None:
         return None
 
 
+async def get_current_user_optional(
+    token: str | None = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    if not token:
+        return None
+    payload = decode_token(token)
+    if not payload or payload.get("type") != "access" or await is_token_revoked(payload.get("jti")):
+        return None
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+    try:
+        parsed_user_id = int(user_id)
+    except (TypeError, ValueError):
+        return None
+    result = await db.execute(select(User).where(User.id == parsed_user_id))
+    user = result.scalar_one_or_none()
+    if not user or not user.is_active:
+        return None
+    return user
+
+
 async def get_current_user(
     token: str | None = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),

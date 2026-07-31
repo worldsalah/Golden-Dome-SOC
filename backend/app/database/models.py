@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, Table
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, Table, JSON
 from sqlalchemy.orm import relationship
 
 from app.database.database import Base
@@ -9,9 +9,22 @@ from app.utils.datetime_helper import utc_now
 
 
 class UserRole(str, PyEnum):
+    SUPER_ADMIN = "super_admin"
+    SECURITY_MANAGER = "security_manager"
+    ANALYST = "analyst"
+    IT_ADMINISTRATOR = "it_administrator"
+    EXECUTIVE = "executive"
+    # Legacy aliases (mapped at runtime)
     ADMIN = "admin"
     SOC_ANALYST = "soc_analyst"
     VIEWER = "viewer"
+
+
+ROLE_MIGRATION_MAP = {
+    "admin": "super_admin",
+    "soc_analyst": "analyst",
+    "viewer": "executive",
+}
 
 
 class AlertStatus(str, PyEnum):
@@ -68,6 +81,27 @@ ioc_incident_association = Table(
 )
 
 
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, index=True)
+    slug = Column(String(128), unique=True, index=True, nullable=False)
+    industry = Column(String(128), nullable=True)
+    contact_email = Column(String(128), nullable=True)
+    contact_phone = Column(String(64), nullable=True)
+    address = Column(Text, nullable=True)
+    plan = Column(String(64), default="professional", nullable=False)
+    max_users = Column(Integer, default=50, nullable=False)
+    max_assets = Column(Integer, default=500, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    settings = Column(JSON, nullable=True, default=dict)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
+
+    users = relationship("User", back_populates="organization")
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -75,10 +109,25 @@ class User(Base):
     username = Column(String(64), unique=True, index=True, nullable=False)
     email = Column(String(128), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(String(32), default=UserRole.SOC_ANALYST.value, nullable=False)
+    role = Column(String(32), default=UserRole.ANALYST.value, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=utc_now, nullable=False)
 
+    # Multi-tenant
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+
+    # MFA
+    mfa_secret = Column(String(255), nullable=True)
+    mfa_enabled = Column(Boolean, default=False, nullable=False)
+    mfa_backup_codes = Column(Text, nullable=True)
+
+    # Session & audit
+    last_login = Column(DateTime, nullable=True)
+    last_login_ip = Column(String(64), nullable=True)
+    failed_login_count = Column(Integer, default=0, nullable=False)
+    password_changed_at = Column(DateTime, nullable=True)
+
+    organization = relationship("Organization", back_populates="users")
     assigned_alerts = relationship("Alert", back_populates="assigned_user")
     assigned_incidents = relationship("Incident", back_populates="assigned_user")
     created_reports = relationship("Report", back_populates="created_by")
@@ -92,6 +141,7 @@ class Asset(Base):
     __tablename__ = "assets"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     hostname = Column(String(128), nullable=False)
     ip_address = Column(String(64), index=True, nullable=True)
     type = Column(String(64), default=AssetType.UNKNOWN.value, nullable=False)
@@ -99,7 +149,7 @@ class Asset(Base):
     criticality = Column(Integer, default=50, nullable=False)
     risk_score = Column(Integer, default=0, nullable=False)
     last_seen = Column(DateTime, nullable=True)
-    wazuh_agent_id = Column(String(64), unique=True, nullable=True)
+    wazuh_agent_id = Column(String(64), nullable=True, index=True)
     created_at = Column(DateTime, default=utc_now, nullable=False)
 
     alerts = relationship("Alert", back_populates="asset")
@@ -110,7 +160,8 @@ class Alert(Base):
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, index=True)
-    wazuh_alert_id = Column(String(64), unique=True, index=True, nullable=False)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    wazuh_alert_id = Column(String(64), index=True, nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     severity = Column(Integer, default=1, nullable=False)
@@ -139,6 +190,7 @@ class Incident(Base):
     __tablename__ = "incidents"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     severity = Column(String(32), default=IncidentSeverity.MEDIUM.value, nullable=False)
     status = Column(String(32), default=IncidentStatus.OPEN.value, nullable=False)
@@ -180,6 +232,7 @@ class AssetVulnerability(Base):
     __tablename__ = "asset_vulnerabilities"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     asset_id = Column(Integer, ForeignKey("assets.id"), nullable=False)
     cve = Column(String(64), nullable=False)
     severity = Column(String(32), nullable=False)
@@ -194,6 +247,7 @@ class ThreatIntelligence(Base):
     __tablename__ = "threat_intelligence"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     indicator = Column(String(255), nullable=False, index=True)
     type = Column(String(64), nullable=False)
     source = Column(String(128), nullable=True)
@@ -212,6 +266,7 @@ class IocDatabase(Base):
     __tablename__ = "ioc_database"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     value = Column(String(255), nullable=False, index=True)
     type = Column(String(64), nullable=False)
     category = Column(String(128), nullable=True)
@@ -225,6 +280,7 @@ class AiAnalysis(Base):
     __tablename__ = "ai_analysis"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     alert_id = Column(Integer, ForeignKey("alerts.id"), nullable=True, index=True)
     incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=True, index=True)
     summary = Column(Text, nullable=False)
@@ -281,6 +337,7 @@ class RiskScore(Base):
     __tablename__ = "risk_scores"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     target_type = Column(String(64), nullable=False)
     target_id = Column(Integer, nullable=False, index=True)
     score = Column(Integer, default=0, nullable=False)
@@ -315,6 +372,7 @@ class DetectionRule(Base):
     __tablename__ = "detection_rules"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     severity = Column(Integer, default=5, nullable=False)
@@ -347,6 +405,7 @@ class Report(Base):
     __tablename__ = "reports"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=True)
     report_type = Column(String(64), default="security", nullable=False)
@@ -361,6 +420,7 @@ class Playbook(Base):
     __tablename__ = "playbooks"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     trigger = Column(String(64), default="manual", nullable=False)
@@ -486,6 +546,7 @@ class ThreatIOC(Base):
     __tablename__ = "threat_iocs"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     type = Column(String(64), nullable=False, index=True)
     value = Column(String(512), nullable=False, index=True)
     first_seen = Column(DateTime, default=utc_now, nullable=False)
@@ -587,7 +648,8 @@ class VulnerabilityIntelligence(Base):
     __tablename__ = "vulnerability_intelligence"
 
     id = Column(Integer, primary_key=True, index=True)
-    cve = Column(String(64), nullable=False, index=True, unique=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    cve = Column(String(64), nullable=False, index=True)
     cvss_score = Column(Integer, nullable=True)
     severity = Column(String(32), nullable=True)
     exploit_available = Column(Boolean, default=False, nullable=False)
@@ -599,3 +661,79 @@ class VulnerabilityIntelligence(Base):
     affected_assets = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    username = Column(String(64), nullable=True)
+    action = Column(String(128), nullable=False)
+    resource_type = Column(String(64), nullable=True)
+    resource_id = Column(String(64), nullable=True)
+    ip_address = Column(String(64), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    details = Column(Text, nullable=True)
+    status = Column(String(32), default="success", nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False, index=True)
+
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    token_jti = Column(String(128), nullable=True, index=True)
+    ip_address = Column(String(64), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    expires_at = Column(DateTime, nullable=True)
+    revoked_at = Column(DateTime, nullable=True)
+
+
+class Connector(Base):
+    __tablename__ = "connectors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    name = Column(String(128), nullable=False)
+    connector_type = Column(String(64), nullable=False, index=True)
+    category = Column(String(64), nullable=False)
+    status = Column(String(32), default="disconnected", nullable=False)
+    config = Column(Text, nullable=True, default="{}")
+    credentials = Column(Text, nullable=True)
+    last_connected = Column(DateTime, nullable=True)
+    last_sync = Column(DateTime, nullable=True)
+    health_status = Column(String(32), default="unknown", nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
+
+
+class ConnectorLog(Base):
+    __tablename__ = "connector_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    connector_id = Column(Integer, ForeignKey("connectors.id"), nullable=False, index=True)
+    level = Column(String(32), default="info", nullable=False)
+    message = Column(Text, nullable=False)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+
+
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    name = Column(String(128), nullable=False)
+    key_hash = Column(String(128), unique=True, nullable=False, index=True)
+    key_prefix = Column(String(16), nullable=False)
+    scopes = Column(Text, nullable=False, default="[]")
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    revoked_at = Column(DateTime, nullable=True)

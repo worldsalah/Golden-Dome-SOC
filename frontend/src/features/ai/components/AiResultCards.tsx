@@ -10,7 +10,7 @@ function RiskBadge({ classification, score }: { classification: string; score: n
     high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
     critical: 'bg-red-500/20 text-red-400 border-red-500/30',
   }
-  const key = classification.toLowerCase()
+  const key = (classification ?? '').toLowerCase()
   return (
     <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium ${colors[key] || colors.medium}`}>
       <AlertTriangle className="h-4 w-4" />
@@ -285,7 +285,7 @@ export function AnomalyList({ items, title }: AnomalyRecordProps) {
     <div>
       <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</h4>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-500">No {title.toLowerCase()} detected in the last 7 days.</p>
+        <p className="text-sm text-gray-500">No {(title ?? '').toLowerCase()} detected in the last 7 days.</p>
       ) : (
         <div className="space-y-2">
           {items.map((item, i) => (

@@ -254,3 +254,43 @@ async def ai_anomalies(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Anomaly detection error: {exc}",
         )
+
+
+@router.post("/attack-chain", dependencies=[RateLimit])
+async def attack_chain_analysis(
+    payload: IncidentInvestigationRequest,
+    current_user: AnalystUser,
+    service: AnalysisService,
+):
+    """AI SOC Analyst: Reconstruct the attack chain for an incident."""
+    try:
+        result = await service.analyze_attack_chain(payload.incident_id, user_id=current_user.id)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Attack chain analysis failed for incident %s", payload.incident_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Attack chain analysis error: {exc}",
+        )
+
+
+@router.post("/detection-review", dependencies=[RateLimit])
+async def detection_engineer_review(
+    payload: AlertAnalysisRequest,
+    current_user: AnalystUser,
+    service: AnalysisService,
+):
+    """AI Detection Engineer: Review an alert for FP, rule improvements, and MITRE gaps."""
+    try:
+        result = await service.review_detection(payload.alert_id, user_id=current_user.id)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Detection engineer review failed for alert %s", payload.alert_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Detection review error: {exc}",
+        )

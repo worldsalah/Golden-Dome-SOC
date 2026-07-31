@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { ChartCard } from '@/components/ChartCard'
+import { formatDateTime } from '@/utils/formatters'
 import ReactECharts from 'echarts-for-react'
 import * as echarts from 'echarts'
 import {
@@ -297,7 +298,7 @@ export function SOARAutomationPage() {
                         const url = URL.createObjectURL(blob)
                         const a = document.createElement('a')
                         a.href = url
-                        a.download = `${pb.name.replace(/\s+/g, '_').toLowerCase()}_playbook.json`
+                        a.download = `${(pb.name ?? 'playbook').replace(/\s+/g, '_').toLowerCase()}_playbook.json`
                         a.click()
                         URL.revokeObjectURL(url)
                       }} className="rounded-md border border-white/[0.1] bg-[#1c1e22] px-3 py-1.5 text-xs text-white hover:bg-white/[0.08]" title="Export">Export</button>
@@ -328,7 +329,7 @@ export function SOARAutomationPage() {
                   <span className="text-xs font-medium text-white">Run #{exec.id}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs ${statusColor(exec.status)}`}>{exec.status}</span>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Playbook {exec.playbook_id} • {new Date(exec.started_at).toLocaleString()}</p>
+                <p className="mt-1 text-xs text-gray-500">Playbook {exec.playbook_id} • {formatDateTime(exec.started_at)}</p>
                 {exec.current_node_id && <p className="mt-1 text-xs text-yellow-400">Node: {exec.current_node_id}</p>}
               </button>
             ))}
@@ -352,7 +353,7 @@ export function SOARAutomationPage() {
                   <div className="mt-2 space-y-2">
                     {(timeline || []).map((ev) => (
                       <div key={ev.id} className="flex gap-3 border-l-2 border-[#d8b17a]/30 pl-3 text-sm">
-                        <span className="text-xs text-gray-500">{new Date(ev.timestamp).toLocaleTimeString()}</span>
+                        <span className="text-xs text-gray-500">{formatDateTime(ev.timestamp)}</span>
                         <span className="text-gray-300">{ev.event_type}: {ev.message}</span>
                       </div>
                     ))}
@@ -405,7 +406,7 @@ export function SOARAutomationPage() {
                     <div>
                       <h4 className="font-semibold text-white">{ap.action_summary || 'Approval Request'}</h4>
                       <p className="text-xs text-gray-500">Execution {ap.execution_id} • Node {ap.node_id} • Risk: <span className={`capitalize ${ap.risk_level === 'critical' ? 'text-red-400' : ap.risk_level === 'high' ? 'text-orange-400' : 'text-yellow-400'}`}>{ap.risk_level}</span></p>
-                      <p className="mt-1 text-xs text-gray-400">Requested by {ap.requested_by || 'system'} at {new Date(ap.created_at).toLocaleString()}</p>
+                      <p className="mt-1 text-xs text-gray-400">Requested by {ap.requested_by || 'system'} at {formatDateTime(ap.created_at)}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button onClick={() => approvalMutation.mutate({ id: ap.id, decision: 'approved' })} disabled={approvalMutation.isPending} className="flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-500 disabled:opacity-50">

@@ -13,6 +13,20 @@ export function formatRelativeTime(value?: string | null): string {
   return dayjs(value).fromNow()
 }
 
+export function formatTime(value?: string | null, opts?: Intl.DateTimeFormatOptions): string {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleTimeString(undefined, opts)
+}
+
+export function formatDateTime(value?: string | null, opts?: Intl.DateTimeFormatOptions): string {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleString(undefined, opts)
+}
+
 export function severityLabel(level: number): string {
   if (level >= 13) return 'Critical'
   if (level >= 10) return 'High'

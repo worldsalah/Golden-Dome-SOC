@@ -9,6 +9,7 @@ from app.api.deps import CurrentUser
 from app.schemas.alert import AlertCreate, AlertListParams, AlertRead, AlertStatusUpdate
 from app.security.jwt import get_current_user
 from app.security.permissions import Role, require_min_role
+from app.security.tenant import ensure_tenant_access
 from app.services.alert_enrichment import AlertEnrichmentService
 from app.services.alert_service import AlertService
 from app.services.wazuh_service import WazuhService
@@ -41,7 +42,7 @@ async def list_alerts(
         assigned_to_me=assigned_to_me,
     )
     service = AlertService(db)
-    alerts, total = await service.get_alerts(params)
+    alerts, total = await service.get_alerts(params, tenant_id=current_user.organization_id)
     return {
         "data": [AlertRead.model_validate(a) for a in alerts],
         "meta": {"page": page, "limit": limit, "total": total},
@@ -55,7 +56,7 @@ async def get_alert(
     db: AsyncSession = Depends(get_db),
 ):
     service = AlertService(db)
-    alert = await service.get_alert(alert_id)
+    alert = await service.get_alert(alert_id, tenant_id=current_user.organization_id)
     if not alert:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
     return alert
@@ -68,7 +69,7 @@ async def create_alert(
     db: AsyncSession = Depends(get_db),
 ):
     service = AlertService(db)
-    alert = await service.create_alert(alert_in)
+    alert = await service.create_alert(alert_in, tenant_id=current_user.organization_id)
     return alert
 
 
@@ -80,9 +81,10 @@ async def update_alert_status(
     db: AsyncSession = Depends(get_db),
 ):
     service = AlertService(db)
-    alert = await service.update_status(alert_id, update)
+    alert = await service.get_alert(alert_id, tenant_id=current_user.organization_id)
     if not alert:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+    alert = await service.update_status(alert_id, update)
     return alert
 
 
@@ -111,7 +113,11 @@ async def enrich_alert(
     db: AsyncSession = Depends(get_db),
 ):
     """Run the alert enrichment pipeline: MITRE, threat intelligence, AI analysis, and optional incident creation."""
-    _ = current_user
+    from app.database.models import Alert
+    alert = await db.get(Alert, alert_id)
+    if not alert:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+    await ensure_tenant_access(alert.tenant_id, current_user.organization_id)
     service = AlertEnrichmentService(db)
     try:
         result = await service.enrich(alert_id, create_incident=create_incident)

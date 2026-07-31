@@ -1,0 +1,336 @@
+name: golden-dome-appliance
+
+x-logging: &default-logging
+  driver: "local"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-common-security: &common-security
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  gateway:
+    image: nginxinc/nginx-unprivileged:1.27-alpine
+    container_name: goldendome-gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - goldendome
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    volumes:
+      - ./nginx/production.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null https://127.0.0.1:443/health --no-check-certificate"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    logging: *default-logging
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: goldendome-frontend
+    environment:
+      NODE_ENV: production
+    networks:
+      - goldendome
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+    logging: *default-logging
+
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: goldendome-migrate
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-goldendome}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-goldendome}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - goldendome
+    restart: "no"
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: goldendome-backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-goldendome}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-goldendome}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0
+      OLLAMA_BASE_URL: http://ollama:11434
+      WAZUH_API_URL: ${WAZUH_API_URL:-https://wazuh-manager:55000}
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-https://wazuh-indexer:9200}
+      ENVIRONMENT: production
+      DEBUG: "false"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    networks:
+      - goldendome
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - app_data:/app/data
+      - app_logs:/app/logs
+      - ./certs:/app/certs:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+    logging: *default-logging
+
+  db:
+    image: postgres:16-alpine
+    container_name: goldendome-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-goldendome}
+      POSTGRES_USER: ${POSTGRES_USER:-goldendome}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - goldendome
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    logging: *default-logging
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: goldendome-redis
+    command:
+      - "redis-server"
+      - "--appendonly"
+      - "yes"
+      - "--requirepass"
+      - "${REDIS_PASSWORD:?Set REDIS_PASSWORD}"
+    volumes:
+      - redis_data:/data
+    networks:
+      - goldendome
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a $$REDIS_PASSWORD ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    logging: *default-logging
+
+  ollama:
+    image: ollama/ollama:0.6.2
+    container_name: goldendome-ollama
+    profiles:
+      - ai
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - goldendome
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+    logging: *default-logging
+
+  ollama-init:
+    image: ollama/ollama:0.6.2
+    container_name: goldendome-ollama-init
+    profiles:
+      - ai-init
+    environment:
+      OLLAMA_HOST: ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b}
+    depends_on:
+      ollama:
+        condition: service_started
+    networks:
+      - goldendome
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c", "until ollama list >/dev/null 2>&1; do sleep 2; done; ollama pull $$OLLAMA_MODEL"]
+    logging: *default-logging
+
+  wazuh-manager:
+    image: wazuh/wazuh-manager:4.14.1
+    container_name: goldendome-wazuh-manager
+    profiles:
+      - wazuh
+    environment:
+      INDEXER_URL: https://wazuh-indexer:9200
+      INDEXER_USERNAME: ${WAZUH_INDEXER_USERNAME:-admin}
+      INDEXER_PASSWORD: ${WAZUH_INDEXER_PASSWORD:-change-me}
+      WAZUH_API_USERNAME: ${WAZUH_API_USERNAME:-wazuh}
+      WAZUH_API_PASSWORD: ${WAZUH_API_PASSWORD:-wazuh}
+    networks:
+      - goldendome
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk -u $${WAZUH_API_USERNAME}:$${WAZUH_API_PASSWORD} https://127.0.0.1:55000/security/user/authenticate -X POST >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    logging: *default-logging
+
+  wazuh-indexer:
+    image: wazuh/wazuh-indexer:4.14.1
+    container_name: goldendome-wazuh-indexer
+    profiles:
+      - wazuh
+    environment:
+      OPENSEARCH_JAVA_OPTS: -Xms1g -Xmx1g
+    ulimits:
+      memlock: {soft: -1, hard: -1}
+      nofile: {soft: 65536, hard: 65536}
+    volumes:
+      - wazuh_indexer_data:/var/lib/wazuh-indexer
+    networks:
+      - goldendome
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+
+  wazuh-dashboard:
+    image: wazuh/wazuh-dashboard:4.14.1
+    container_name: goldendome-wazuh-dashboard
+    profiles:
+      - wazuh
+    environment:
+      INDEXER_USERNAME: ${WAZUH_INDEXER_USERNAME:-admin}
+      INDEXER_PASSWORD: ${WAZUH_INDEXER_PASSWORD:-change-me}
+      WAZUH_API_URL: https://wazuh-manager
+    depends_on: [wazuh-indexer, wazuh-manager]
+    networks:
+      - goldendome
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  backup:
+    image: offen/docker-volume-backup:v2.41.0
+    container_name: goldendome-backup
+    profiles:
+      - backup
+    environment:
+      BACKUP_CRON_EXPRESSION: "0 3 * * *"
+      BACKUP_RETENTION_DAYS: "7"
+      BACKUP_FILENAME: "goldendome-backup-%Y-%m-%dT%H-%M-%S.tar.gz"
+      BACKUP_ARCHIVE: "/backups"
+      BACKUP_STOP_CONTAINER_LABEL: "goldendome.stop-during-backup"
+    volumes:
+      - postgres_data:/backup/postgres:ro
+      - redis_data:/backup/redis:ro
+      - app_data:/backup/app:ro
+      - ./backups:/backups
+    networks:
+      - goldendome
+    restart: unless-stopped
+    logging: *default-logging
+
+networks:
+  goldendome:
+    driver: bridge
+    internal: false
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  app_data:
+  app_logs:
+  wazuh_indexer_data:

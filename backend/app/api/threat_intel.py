@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import AnalystUser, DBDependency
 from app.security.permissions import Role, require_min_role
+from app.security.tenant import tenant_filter
 from app.database.models import IocDatabase, ThreatIntelligence
 from app.schemas.threat_intel import ThreatIntelRequest, ThreatIntelResponse
 from app.services.ai_engine.threat_intel import ThreatIntelEnricher
@@ -69,10 +70,13 @@ async def list_indicators(
     page: int = 1,
     limit: int = 20,
 ):
-    total_result = await db.execute(select(IocDatabase))
-    total = len(total_result.scalars().all())
+    query = select(IocDatabase)
+    filt = tenant_filter(IocDatabase, current_user.organization_id)
+    if filt is not None:
+        query = query.where(filt)
+    total = len((await db.execute(query)).scalars().all())
     result = await db.execute(
-        select(IocDatabase)
+        query
         .order_by(desc(IocDatabase.last_seen))
         .offset((page - 1) * limit)
         .limit(limit)

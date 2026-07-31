@@ -35,8 +35,11 @@ class AlertService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_alerts(self, params: AlertListParams) -> tuple[Sequence[Alert], int]:
+    async def get_alerts(self, params: AlertListParams, tenant_id: int | None = None) -> tuple[Sequence[Alert], int]:
         query = select(Alert)
+
+        if tenant_id is not None:
+            query = query.where(Alert.tenant_id == tenant_id)
 
         if params.severity is not None:
             query = query.where(Alert.severity == params.severity)
@@ -68,16 +71,19 @@ class AlertService:
         result = await self.db.execute(query)
         return result.scalars().all(), total
 
-    async def get_alert(self, alert_id: int) -> Alert | None:
-        result = await self.db.execute(select(Alert).where(Alert.id == alert_id))
+    async def get_alert(self, alert_id: int, tenant_id: int | None = None) -> Alert | None:
+        query = select(Alert).where(Alert.id == alert_id)
+        if tenant_id is not None:
+            query = query.where(Alert.tenant_id == tenant_id)
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_alert(self, alert_in: AlertCreate) -> Alert:
-        alert = Alert(**alert_in.model_dump())
+    async def create_alert(self, alert_in: AlertCreate, tenant_id: int | None = None) -> Alert:
+        alert = Alert(**alert_in.model_dump(), tenant_id=tenant_id)
         self.db.add(alert)
         await self.db.commit()
         await self.db.refresh(alert)
-        logger.info("Created alert %s (Wazuh ID: %s)", alert.id, alert.wazuh_alert_id)
+        logger.info("Created alert %s (Wazuh ID: %s, tenant=%s)", alert.id, alert.wazuh_alert_id, tenant_id)
         await _run_alert_triggered_playbooks(self.db, alert)
         return alert
 

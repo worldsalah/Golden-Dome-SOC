@@ -76,20 +76,24 @@ class ThreatIntelEnricher:
             except Exception as exc:
                 logger.debug("AbuseIPDB lookup failed for %s: %s", ip, exc)
 
-        if self.settings.ALIENVAULT_OTX_API_KEY:
-            try:
-                headers = {"X-OTX-API-KEY": self.settings.ALIENVAULT_OTX_API_KEY}
-                response = await self.client.get(
-                    f"https://otx.alienvault.com/api/v1/indicators/IPv4/{ip}/general", headers=headers
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    pulse_count = data.get("pulse_info", {}).get("count", 0)
-                    score = min(pulse_count * 10, 100)
-                    results["reputation_score"] = max(results["reputation_score"], score)
-                    results["sources"].append({"name": "alienvault_otx", "pulse_count": pulse_count})
-            except Exception as exc:
-                logger.debug("AlienVault OTX lookup failed for %s: %s", ip, exc)
+        # AlienVault OTX (free API, works without key for basic queries)
+        try:
+            headers = {}
+            if self.settings.ALIENVAULT_OTX_API_KEY:
+                headers["X-OTX-API-KEY"] = self.settings.ALIENVAULT_OTX_API_KEY
+            response = await self.client.get(
+                f"https://otx.alienvault.com/api/v1/indicators/IPv4/{ip}/general", headers=headers
+            )
+            if response.status_code == 200:
+                data = response.json()
+                pulse_count = data.get("pulse_info", {}).get("count", 0)
+                score = min(pulse_count * 10, 100)
+                results["reputation_score"] = max(results["reputation_score"], score)
+                results["sources"].append({"name": "alienvault_otx", "pulse_count": pulse_count})
+                if pulse_count > 0:
+                    results["threat_category"] = results.get("threat_category") or "malicious_ip"
+        except Exception as exc:
+            logger.debug("AlienVault OTX lookup failed for %s: %s", ip, exc)
 
         # URLHaus can also query IP reputation
         try:
@@ -109,20 +113,22 @@ class ThreatIntelEnricher:
         results["confidence"] = min(50 + len(results["sources"]) * 15, 100)
 
     async def _enrich_domain(self, domain: str, results: dict[str, Any]) -> None:
-        if self.settings.ALIENVAULT_OTX_API_KEY:
-            try:
-                headers = {"X-OTX-API-KEY": self.settings.ALIENVAULT_OTX_API_KEY}
-                response = await self.client.get(
-                    f"https://otx.alienvault.com/api/v1/indicators/domain/{domain}/general", headers=headers
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    pulse_count = data.get("pulse_info", {}).get("count", 0)
-                    score = min(pulse_count * 10, 100)
-                    results["reputation_score"] = max(results["reputation_score"], score)
-                    results["sources"].append({"name": "alienvault_otx", "pulse_count": pulse_count})
-            except Exception as exc:
-                logger.debug("AlienVault OTX domain lookup failed for %s: %s", domain, exc)
+        # AlienVault OTX (free API, works without key)
+        try:
+            headers = {}
+            if self.settings.ALIENVAULT_OTX_API_KEY:
+                headers["X-OTX-API-KEY"] = self.settings.ALIENVAULT_OTX_API_KEY
+            response = await self.client.get(
+                f"https://otx.alienvault.com/api/v1/indicators/domain/{domain}/general", headers=headers
+            )
+            if response.status_code == 200:
+                data = response.json()
+                pulse_count = data.get("pulse_info", {}).get("count", 0)
+                score = min(pulse_count * 10, 100)
+                results["reputation_score"] = max(results["reputation_score"], score)
+                results["sources"].append({"name": "alienvault_otx", "pulse_count": pulse_count})
+        except Exception as exc:
+            logger.debug("AlienVault OTX domain lookup failed for %s: %s", domain, exc)
 
         try:
             response = await self.client.post(

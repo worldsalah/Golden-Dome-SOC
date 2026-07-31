@@ -167,3 +167,101 @@ JSON structure:
 
 Respond ONLY with valid JSON. Do not wrap in markdown code fences.
 """)
+
+ATTACK_CHAIN_PROMPT = Template("""You are a senior SOC analyst performing attack chain analysis. Given a set of related alerts from an incident, reconstruct the likely attack chain using the MITRE ATT&CK framework. Return ONLY valid JSON.
+
+Incident: $incident
+Alerts (chronological): $alerts
+Threat intelligence: $threat_intel
+Asset context: $assets
+
+JSON structure:
+{
+  "attack_chain_summary": "Narrative description of the attack progression",
+  "kill_chain_phases": [
+    {"phase": "Reconnaissance", "description": "...", "evidence": ["alert_id", "alert_id"]},
+    {"phase": "Initial Access", "description": "...", "evidence": ["alert_id"]},
+    {"phase": "Execution", "description": "...", "evidence": ["alert_id"]},
+    {"phase": "Persistence", "description": "...", "evidence": []},
+    {"phase": "Privilege Escalation", "description": "...", "evidence": []},
+    {"phase": "Defense Evasion", "description": "...", "evidence": []},
+    {"phase": "Credential Access", "description": "...", "evidence": []},
+    {"phase": "Discovery", "description": "...", "evidence": []},
+    {"phase": "Lateral Movement", "description": "...", "evidence": []},
+    {"phase": "Collection", "description": "...", "evidence": []},
+    {"phase": "Command and Control", "description": "...", "evidence": []},
+    {"phase": "Exfiltration", "description": "...", "evidence": []},
+    {"phase": "Impact", "description": "...", "evidence": []}
+  ],
+  "attacker_profile": {
+    "sophistication": "low|medium|high|APT-level",
+    "likely_threat_actor": "Named group or 'Unknown'",
+    "motivation": "Financial|Espionage|Disruption|Unknown",
+    "ttps_observed": ["T####", "T####"]
+  },
+  "evidence_summary": {
+    "key_findings": ["Finding 1", "Finding 2"],
+    "confidence_level": "low|medium|high",
+    "gaps_in_evidence": ["What we don't know yet"]
+  },
+  "remediation_priority": [
+    {"priority": "critical", "action": "...", "reason": "..."},
+    {"priority": "high", "action": "...", "reason": "..."}
+  ]
+}
+
+Only include phases where evidence exists. Respond ONLY with valid JSON.
+""")
+
+DETECTION_ENGINEER_PROMPT = Template("""You are an AI Detection Engineer. Analyze the following alert data and detection rule to identify false positives, suggest rule improvements, and identify MITRE coverage gaps. Return ONLY valid JSON.
+
+Alert data:
+$alert_data
+
+Detection rule (if available):
+$rule_data
+
+Historical alert stats for this rule:
+$stats
+
+JSON structure:
+{
+  "false_positive_analysis": {
+    "is_likely_fp": true|false,
+    "confidence": 0-100,
+    "reasoning": "Explanation of why this is or isn't a false positive",
+    "fp_indicators": ["Indicator 1", "Indicator 2"],
+    "legitimate_indicators": ["Indicator 1", "Indicator 2"]
+  },
+  "rule_improvement_suggestions": [
+    {
+      "suggestion": "Description of the improvement",
+      "current_issue": "What's wrong with the current rule",
+      "proposed_change": "Specific change to make",
+      "expected_impact": "What this will improve"
+    }
+  ],
+  "mitre_coverage": {
+    "technique_covered": "T#### or null",
+    "related_techniques": ["T####", "T####"],
+    "missing_detection_gaps": ["Technique that should be detected but isn't"],
+    "recommended_new_rules": [
+      {
+        "name": "Rule name",
+        "technique_id": "T####",
+        "description": "What this rule should detect",
+        "suggested_logic": "Pseudo-code or description of detection logic"
+      }
+    ]
+  },
+  "tuning_recommendations": {
+    "severity_adjustment": "increase|decrease|maintain",
+    "reasoning": "Why severity should change",
+    "filter_suggestions": ["Filter 1", "Filter 2"],
+    "whitelist_suggestions": ["Entry 1"]
+  },
+  "overall_assessment": "Summary of the detection engineering review"
+}
+
+Respond ONLY with valid JSON. Do not wrap in markdown code fences.
+""")

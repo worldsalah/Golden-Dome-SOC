@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Search, ShieldCheck } from 'lucide-react'
 import { ChartCard } from '@/components/ChartCard'
 import { enrichThreatIOC, listThreatIOCs, getThreatIOC } from '@/services/api'
+import { formatDateTime } from '@/utils/formatters'
 import { severityClass, scoreColor, typeIcons } from './helpers'
 
 export function IocExplorer() {
@@ -159,7 +160,7 @@ export function IocExplorer() {
                     <td className="py-3"><span className={`font-medium ${scoreColor(ioc.threat_score)}`}>{ioc.threat_score}</span></td>
                     <td className="py-3 text-gray-400">{ioc.confidence}</td>
                     <td className="py-3 text-gray-400">{ioc.source_count}</td>
-                    <td className="py-3 text-gray-400">{ioc.last_seen ? new Date(ioc.last_seen).toLocaleString() : '—'}</td>
+                    <td className="py-3 text-gray-400">{formatDateTime(ioc.last_seen)}</td>
                   </tr>
                 ))
               ) : (

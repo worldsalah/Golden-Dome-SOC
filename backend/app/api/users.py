@@ -10,6 +10,7 @@ from app.config.security import hash_password
 from app.database.database import get_db
 from app.database.models import User
 from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.security.permissions import Role
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -27,11 +28,15 @@ async def list_users(
     page: int = 1,
     limit: int = 20,
 ):
-    total_result = await db.execute(select(User))
-    total = len(total_result.scalars().all())
+    is_super = current_user.role == Role.SUPER_ADMIN.value
+    query = select(User)
+    if not is_super:
+        query = query.where(User.organization_id == current_user.organization_id)
+
+    total = len((await db.execute(query)).scalars().all())
 
     result = await db.execute(
-        select(User)
+        query
         .offset((page - 1) * limit)
         .limit(limit)
         .order_by(User.created_at.desc())
@@ -52,6 +57,8 @@ async def get_user(
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if current_user.role != Role.SUPER_ADMIN.value and user.organization_id != current_user.organization_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this user")
     return user
 
 
@@ -76,6 +83,7 @@ async def create_user(
         hashed_password=hash_password(payload.password),
         role=payload.role,
         is_active=payload.is_active,
+        organization_id=current_user.organization_id,
     )
     db.add(user)
     await db.commit()
@@ -94,6 +102,8 @@ async def update_user(
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if current_user.role != Role.SUPER_ADMIN.value and user.organization_id != current_user.organization_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this user")
 
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -114,6 +124,8 @@ async def delete_user(
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if current_user.role != Role.SUPER_ADMIN.value and user.organization_id != current_user.organization_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this user")
     if user.id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

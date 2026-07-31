@@ -34,6 +34,14 @@ export const useThemeStore = create<ThemeState>()(
       onRehydrateStorage: () => (state) => {
         applyTheme(state?.theme ?? 'dark')
       },
+      deserialize: (str) => {
+        if (!str) return undefined as any
+        try {
+          return JSON.parse(str)
+        } catch {
+          return undefined as any
+        }
+      },
     },
   ),
 )

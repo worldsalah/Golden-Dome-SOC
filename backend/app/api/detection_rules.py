@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import AnalystUser, CurrentUser, get_db
+from app.security.jwt import get_current_user
 from app.schemas.detection_rule import (
     DetectionRuleCreate,
     DetectionRuleRead,
@@ -20,8 +21,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/detection-rules", tags=["Detection Rules"])
 
 
-def _service(db: AsyncSession = Depends(get_db)) -> DetectionRuleService:
-    return DetectionRuleService(db)
+def _service(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> DetectionRuleService:
+    return DetectionRuleService(db, tenant_id=current_user.organization_id)
 
 
 ServiceDep = Annotated[DetectionRuleService, Depends(_service)]

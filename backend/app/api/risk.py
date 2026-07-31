@@ -5,18 +5,20 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import AnalystUser, DBDependency
+from app.api.deps import AnalystUser, CurrentUser, DBDependency
 from app.database.database import get_db
 from app.database.models import Alert, Asset, Incident, RiskScore
 from app.schemas.risk import RiskScoreResponse
+from app.security.jwt import get_current_user
+from app.security.tenant import ensure_tenant_access
 from app.services.ai_engine.risk_scorer import RiskScorer
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/risk", tags=["Risk Center"])
 
 
-def get_risk_service(db: DBDependency) -> RiskScorer:
-    return RiskScorer(db)
+def get_risk_service(db: DBDependency, current_user: dict = Depends(get_current_user)) -> RiskScorer:
+    return RiskScorer(db, tenant_id=current_user.organization_id)
 
 
 RiskService = Annotated[RiskScorer, Depends(get_risk_service)]
@@ -31,6 +33,7 @@ async def get_asset_risk(
     asset = await service.db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    await ensure_tenant_access(asset.tenant_id, current_user.organization_id)
     score, reason = await service.calculate_asset_risk(asset)
     await service.store_risk_score("asset", asset.id, score, reason)
     return RiskScoreResponse(
@@ -51,6 +54,7 @@ async def recalculate_asset_risk(
     asset = await service.db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    await ensure_tenant_access(asset.tenant_id, current_user.organization_id)
     score, reason = await service.calculate_asset_risk(asset)
     asset.risk_score = score
     await service.db.commit()
@@ -73,6 +77,7 @@ async def get_alert_risk(
     alert = await service.db.get(Alert, alert_id)
     if not alert:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+    await ensure_tenant_access(alert.tenant_id, current_user.organization_id)
     score, reason = await service.calculate_alert_risk(alert)
     await service.store_risk_score("alert", alert.id, score, reason)
     return RiskScoreResponse(
@@ -93,6 +98,7 @@ async def get_incident_risk(
     incident = await service.db.get(Incident, incident_id)
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    await ensure_tenant_access(incident.tenant_id, current_user.organization_id)
     score, reason = await service.calculate_incident_risk(incident)
     await service.store_risk_score("incident", incident.id, score, reason)
     return RiskScoreResponse(

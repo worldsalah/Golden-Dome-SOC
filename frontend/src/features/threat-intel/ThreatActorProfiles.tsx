@@ -20,7 +20,7 @@ export function ThreatActorProfiles() {
   }
 
   const filtered = (actors || []).filter((a: any) =>
-    a.name.toLowerCase().includes(search.toLowerCase()) ||
+    (a.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (a.country || '').toLowerCase().includes(search.toLowerCase())
   )
 

@@ -8,6 +8,28 @@
   </head>
   <body class="bg-soc-bg text-gray-100">
     <div id="root"></div>
+    <script>
+      window.__socErrors = [];
+      function __socShowError(title, msg) {
+        window.__socErrors.push(title + ': ' + msg);
+        var root = document.getElementById('root') || document.body;
+        if (!root) return;
+        var pre = document.createElement('pre');
+        pre.style.padding = '20px';
+        pre.style.color = '#e08585';
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.fontFamily = 'monospace';
+        pre.textContent = title + '\n' + msg;
+        root.appendChild(pre);
+      }
+      window.onerror = function(msg, url, line, col, err) {
+        var m = msg + ' at ' + (err && err.stack ? err.stack : (url + ':' + line + ':' + col));
+        __socShowError('FATAL FRONTEND ERROR', m);
+      };
+      window.onunhandledrejection = function(e) {
+        __socShowError('UNHANDLED PROMISE', e.reason && e.reason.stack ? e.reason.stack : String(e.reason));
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

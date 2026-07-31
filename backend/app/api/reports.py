@@ -1,15 +1,20 @@
+import csv
+import io
 import logging
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import AdminUser, AnalystUser, CurrentUser
 from app.database.database import get_db
 from app.database.models import Alert, Asset, Incident, Report
 from app.schemas.report import ReportCreate, ReportRead
+from app.security.tenant import ensure_tenant_access, tenant_filter
+from app.services.wazuh_service import WazuhService
 
 
 from app.utils.datetime_helper import utc_now
@@ -24,11 +29,16 @@ async def list_reports(
     page: int = 1,
     limit: int = 20,
 ):
-    total_result = await db.execute(select(Report))
-    total = len(total_result.scalars().all())
+    query = select(Report)
+    filt = tenant_filter(Report, current_user.organization_id)
+    if filt is not None:
+        query = query.where(filt)
+
+    count_query = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_query)).scalar_one()
 
     result = await db.execute(
-        select(Report)
+        query
         .offset((page - 1) * limit)
         .limit(limit)
         .order_by(Report.created_at.desc())
@@ -49,6 +59,7 @@ async def get_report(
     report = await db.get(Report, report_id)
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+    await ensure_tenant_access(report.tenant_id, current_user.organization_id)
     return report
 
 
@@ -59,9 +70,16 @@ async def generate_report(
     db: AsyncSession = Depends(get_db),
 ):
     # Gather summary statistics for the report content.
-    alert_count = (await db.execute(select(Alert))).scalars().all().__len__()
-    incident_count = (await db.execute(select(Incident))).scalars().all().__len__()
-    asset_count = (await db.execute(select(Asset))).scalars().all().__len__()
+    async def _scoped_count(model):
+        stmt = select(func.count(model.id))
+        filt = tenant_filter(model, current_user.organization_id)
+        if filt is not None:
+            stmt = stmt.where(filt)
+        return (await db.execute(stmt)).scalar_one()
+
+    alert_count = await _scoped_count(Alert)
+    incident_count = await _scoped_count(Incident)
+    asset_count = await _scoped_count(Asset)
 
     content = (
         f"Golden Dome SOC Report: {payload.title}\n"
@@ -78,6 +96,7 @@ async def generate_report(
         title=payload.title,
         content=content,
         report_type=payload.report_type,
+        tenant_id=current_user.organization_id,
         created_by_id=current_user.id,
     )
     db.add(report)
@@ -96,7 +115,152 @@ async def delete_report(
     report = await db.get(Report, report_id)
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+    await ensure_tenant_access(report.tenant_id, current_user.organization_id)
     await db.delete(report)
     await db.commit()
     logger.info("Report deleted: %s by user %s", report.title, current_user.username)
     return None
+
+
+@router.get("/export/csv")
+async def export_alerts_csv(
+    current_user: CurrentUser,
+    hours: int = Query(24, ge=1, le=720),
+    severity: int | None = Query(None),
+    agent_id: str | None = Query(None),
+    rule_id: str | None = Query(None),
+    mitre_technique: str | None = Query(None),
+):
+    """Export live Wazuh alerts as CSV with filtering."""
+    service = WazuhService()
+    alerts = await service.get_alerts(size=1000, severity=severity)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Timestamp", "Rule ID", "Description", "Level", "Source IP", "Destination IP", "Agent", "MITRE Technique"])
+
+    for raw in alerts:
+        norm = await service.normalize_alert(raw)
+        if agent_id and norm.get("agent_id") != agent_id:
+            continue
+        if rule_id and norm.get("rule_id") != rule_id:
+            continue
+        if mitre_technique and norm.get("mitre_technique") != mitre_technique:
+            continue
+        writer.writerow([
+            norm.get("timestamp", ""),
+            norm.get("rule_id", ""),
+            norm.get("title", ""),
+            norm.get("severity", ""),
+            norm.get("source_ip", ""),
+            norm.get("destination_ip", ""),
+            norm.get("agent_name", ""),
+            norm.get("mitre_technique", ""),
+        ])
+
+    output.seek(0)
+    filename = f"alerts_report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.get("/export/excel")
+async def export_alerts_excel(
+    current_user: CurrentUser,
+    hours: int = Query(24, ge=1, le=720),
+    severity: int | None = Query(None),
+    agent_id: str | None = Query(None),
+    rule_id: str | None = Query(None),
+    mitre_technique: str | None = Query(None),
+):
+    """Export live Wazuh alerts as Excel-compatible CSV (can be opened by Excel)."""
+    service = WazuhService()
+    alerts = await service.get_alerts(size=1000, severity=severity)
+
+    output = io.StringIO()
+    writer = csv.writer(output, dialect="excel")
+    writer.writerow(["Timestamp", "Rule ID", "Description", "Level", "Source IP", "Destination IP", "Agent", "MITRE Technique"])
+
+    for raw in alerts:
+        norm = await service.normalize_alert(raw)
+        if agent_id and norm.get("agent_id") != agent_id:
+            continue
+        if rule_id and norm.get("rule_id") != rule_id:
+            continue
+        if mitre_technique and norm.get("mitre_technique") != mitre_technique:
+            continue
+        writer.writerow([
+            norm.get("timestamp", ""),
+            norm.get("rule_id", ""),
+            norm.get("title", ""),
+            norm.get("severity", ""),
+            norm.get("source_ip", ""),
+            norm.get("destination_ip", ""),
+            norm.get("agent_name", ""),
+            norm.get("mitre_technique", ""),
+        ])
+
+    output.seek(0)
+    filename = f"alerts_report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xls"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="application/vnd.ms-excel",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.get("/export/pdf")
+async def export_alerts_pdf(
+    current_user: CurrentUser,
+    hours: int = Query(24, ge=1, le=720),
+    severity: int | None = Query(None),
+):
+    """Export a simple PDF report of live Wazuh alerts."""
+    service = WazuhService()
+    dashboard = await service.get_dashboard(hours=hours)
+    alerts = await service.get_alerts(size=100, severity=severity)
+
+    try:
+        from fpdf import FPDF
+    except ImportError:
+        raise HTTPException(status_code=500, detail="fpdf2 library not installed")
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "Golden Dome SOC - Live Alert Report", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 8, f"Generated: {utc_now().isoformat()} UTC", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(5)
+
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Dashboard Summary", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 6, f"Total Alerts: {dashboard.get('total_alerts', 0)}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, f"Alerts (24h): {dashboard.get('alerts_last_24h', 0)}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, f"Active Agents: {dashboard.get('active_agents', 0)}/{dashboard.get('total_agents', 0)}", new_x="LMARGIN", new_y="NEXT")
+    sev = dashboard.get("severity", {})
+    pdf.cell(0, 6, f"Critical: {sev.get('critical', 0)}  High: {sev.get('high', 0)}  Medium: {sev.get('medium', 0)}  Low: {sev.get('low', 0)}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(5)
+
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Recent Alerts", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 8)
+
+    for raw in alerts[:50]:
+        norm = await service.normalize_alert(raw)
+        line = f"[{norm.get('timestamp', '')}] L{norm.get('severity', '')} | {norm.get('title', '')[:60]} | {norm.get('source_ip', 'N/A')} | {norm.get('agent_name', 'N/A')}"
+        pdf.cell(0, 5, line, new_x="LMARGIN", new_y="NEXT")
+
+    buf = io.BytesIO()
+    pdf.output(buf)
+    buf.seek(0)
+    filename = f"alerts_report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pdf"
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )

@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    /* Surfaces */
-    --soc-bg: #0a0a0b;
-    --soc-panel: #121315;
-    --soc-panel-raised: #17181b;
-    --soc-border: #26272b;
-    --soc-border-strong: #34363c;
-    /* Text */
-    --soc-text: #ece9e4;
-    --soc-text-dim: #8b8e94;
-    --soc-text-faint: #5d6065;
-    /* Accents */
-    --soc-copper: #c97848;
-    --soc-amber: #d8b17a;
-    --soc-crimson: #b94747;
-    --soc-emerald: #3ba676;
-    --soc-violet: #8d7ab5;
-    --soc-primary: #7c5540;
-    --soc-accent: #b98947;
+    /* Surfaces — softer deep slate, easier on the eye */
+    --soc-bg: #0b1016;
+    --soc-panel: #111820;
+    --soc-panel-raised: #161d27;
+    --soc-border: #1f2a38;
+    --soc-border-strong: #2b3949;
+    /* Text — slightly cool, reduced contrast */
+    --soc-text: #e8eaed;
+    --soc-text-dim: #9aa2ad;
+    --soc-text-faint: #5d6570;
+    /* Accents — warm copper/gold that catches the eye */
+    --soc-copper: #d2854a;
+    --soc-amber: #e0b87f;
+    --soc-crimson: #c95454;
+    --soc-emerald: #4db883;
+    --soc-violet: #9f8ec8;
+    --soc-primary: #8a5f47;
+    --soc-accent: #c8964d;
     /* Motion */
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -31,6 +31,8 @@
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     letter-spacing: -0.01em;
   }
+
+  html:not(.light) body { background-color: var(--soc-bg); color: var(--soc-text); }
 
   h1, h2, h3 { letter-spacing: -0.03em; }
   code, .mono { font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; }
@@ -44,16 +46,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #090909;
+    background: #0b1016;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #374151;
+    background: #3d4d5c;
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #4b5563;
+    background: #4f6173;
   }
 }
 
@@ -78,6 +80,94 @@
   .table-shell tbody td { @apply border-b border-white/[0.05] px-3 py-2.5 text-[13px] text-stone-300; }
   .table-shell tbody tr { @apply transition-colors hover:bg-white/[0.03]; }
 }
+
+/* ============================================================
+   DARK MODE — softer deep slate, reduced contrast, warm accents
+   ============================================================ */
+html:not(.light) .bg-\[\#0a0a0b\],
+html:not(.light) .bg-\[\#090a0b\],
+html:not(.light) .bg-\[\#090909\],
+html:not(.light) .bg-\[\#0b0b0c\] { background-color: #0b1016; }
+
+html:not(.light) .bg-\[\#0e0f11\],
+html:not(.light) .bg-\[\#0d0f0f\],
+html:not(.light) .bg-\[\#0f1113\],
+html:not(.light) .bg-\[\#111315\] { background-color: #111820; }
+
+html:not(.light) .bg-\[\#141518\],
+html:not(.light) .bg-\[\#121316\],
+html:not(.light) .bg-\[\#131417\],
+html:not(.light) .bg-\[\#101113\] { background-color: #141b25; }
+
+html:not(.light) .bg-\[\#17181b\],
+html:not(.light) .bg-\[\#1c1e22\],
+html:not(.light) .bg-\[\#191c1f\],
+html:not(.light) .bg-\[\#17181b\]\/50 { background-color: #161d27; }
+html:not(.light) .bg-\[\#17181b\]\/50 { background-color: rgba(22, 29, 39, 0.6); }
+html:not(.light) .bg-\[\#141518\]\/90 { background-color: rgba(20, 27, 37, 0.94); }
+html:not(.light) .bg-\[\#2a2320\] { background-color: #1f252d; }
+html:not(.light) .bg-soc-bg { background-color: #0b1016; }
+html:not(.light) .bg-soc-panel, html:not(.light) .bg-soc-panel\/80 { background-color: #111820; }
+html:not(.light) .bg-black\/70 { background-color: rgba(0, 0, 0, 0.55); }
+
+/* White-alpha fills for dark become cool-white alpha */
+html:not(.light) .bg-white\/\[0\.03\] { background-color: rgba(255, 255, 255, 0.04); }
+html:not(.light) .bg-white\/\[0\.04\] { background-color: rgba(255, 255, 255, 0.05); }
+html:not(.light) .bg-white\/\[0\.05\] { background-color: rgba(255, 255, 255, 0.06); }
+html:not(.light) .bg-white\/\[0\.06\] { background-color: rgba(255, 255, 255, 0.07); }
+html:not(.light) .bg-white\/5 { background-color: rgba(255, 255, 255, 0.06); }
+html:not(.light) .hover\:bg-white\/\[0\.02\]:hover { background-color: rgba(255, 255, 255, 0.03); }
+html:not(.light) .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(255, 255, 255, 0.05); }
+html:not(.light) .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(255, 255, 255, 0.06); }
+html:not(.light) .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(255, 255, 255, 0.08); }
+html:not(.light) .hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(255, 255, 255, 0.11); }
+html:not(.light) .hover\:bg-\[\#17181b\]:hover { background-color: #1c2531; }
+
+/* Text palette for dark */
+html:not(.light) .text-stone-100,
+html:not(.light) .text-gray-100,
+html:not(.light) .text-white,
+html:not(.light) .text-\[\#f2eee8\] { color: #e8eaed; }
+html:not(.light) .text-stone-200,
+html:not(.light) .text-gray-200 { color: #d4d8dc; }
+html:not(.light) .text-stone-300,
+html:not(.light) .text-gray-300 { color: #9aa2ad; }
+html:not(.light) .text-stone-400,
+html:not(.light) .text-gray-400 { color: #7a8491; }
+html:not(.light) .text-stone-500,
+html:not(.light) .text-gray-500,
+html:not(.light) .text-stone-600,
+html:not(.light) .text-gray-600 { color: #5d6570; }
+
+/* Accent text — slightly warmer for pop */
+html:not(.light) .text-\[\#d8b17a\],
+html:not(.light) .text-\[\#e2c495\],
+html:not(.light) .text-\[\#e8d2af\],
+html:not(.light) .text-\[\#b98947\] { color: #e0b87f; }
+html:not(.light) .text-\[\#c97848\],
+html:not(.light) .text-\[\#dfa07a\] { color: #d2854a; }
+html:not(.light) .text-\[\#e08585\] { color: #c95454; }
+html:not(.light) .text-\[\#7cc9a5\] { color: #4db883; }
+html:not(.light) .text-emerald-400, html:not(.light) .text-emerald-300 { color: #4db883; }
+
+/* Component primitives for dark */
+html:not(.light) .enterprise-panel { background-color: #141b25; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+html:not(.light) .control { background-color: #141b25; border-color: rgba(255, 255, 255, 0.12); color: #d4d8dc; }
+html:not(.light) .field { background-color: #141b25; border-color: rgba(255, 255, 255, 0.12); color: #e8eaed; }
+html:not(.light) .icon-button { border-color: rgba(255, 255, 255, 0.12); color: #9aa2ad; }
+html:not(.light) .icon-button:hover { background-color: rgba(255, 255, 255, 0.08); color: #e8eaed; }
+html:not(.light) .btn-primary { background-color: #e8eaed; color: #0b1016; }
+html:not(.light) .btn-primary:hover { background-color: #ffffff; }
+html:not(.light) .btn-ghost { border-color: rgba(255, 255, 255, 0.14); color: #d4d8dc; }
+html:not(.light) .btn-ghost:hover { border-color: rgba(255, 255, 255, 0.3); color: #e8eaed; }
+html:not(.light) .table-shell thead th { background-color: #111820; border-color: rgba(255, 255, 255, 0.1); color: #7a8491; }
+html:not(.light) .table-shell tbody td { border-color: rgba(255, 255, 255, 0.06); color: #d4d8dc; }
+html:not(.light) .table-shell tbody tr:hover { background-color: rgba(255, 255, 255, 0.04); }
+html:not(.light) .map-grid { background-color: #111820; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); }
+html:not(.light) .sev-critical { background-color: rgba(201, 84, 84, 0.12); color: #e08585; border-color: rgba(201, 84, 84, 0.35); }
+html:not(.light) .sev-high { background-color: rgba(210, 133, 74, 0.12); color: #dfa07a; border-color: rgba(210, 133, 74, 0.35); }
+html:not(.light) .sev-medium { background-color: rgba(224, 184, 127, 0.14); color: #e2c495; border-color: rgba(224, 184, 127, 0.4); }
+html:not(.light) .sev-low { background-color: rgba(77, 184, 131, 0.12); color: #7cc9a5; border-color: rgba(77, 184, 131, 0.3); }
 
 /* ============================================================
    LIGHT MODE — warm paper palette, same copper/gold identity

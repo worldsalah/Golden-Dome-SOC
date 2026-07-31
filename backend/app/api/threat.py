@@ -15,6 +15,7 @@ from app.database.models import (
     ThreatIOC,
     VulnerabilityIntelligence,
 )
+from app.security.tenant import ensure_tenant_access, tenant_filter
 from app.utils.datetime_helper import utc_now
 from app.schemas.threat_intel import (
     CampaignDetail,
@@ -137,6 +138,9 @@ async def list_iocs(
     offset: int = Query(0, ge=0),
 ):
     stmt = select(ThreatIOC).order_by(ThreatIOC.threat_score.desc())
+    filt = tenant_filter(ThreatIOC, current_user.organization_id)
+    if filt is not None:
+        stmt = stmt.where(filt)
     if type:
         stmt = stmt.where(ThreatIOC.type == type)
     if malicious is not None:
@@ -159,6 +163,7 @@ async def get_ioc(
     ioc = result.scalar_one_or_none()
     if not ioc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="IOC not found")
+    await ensure_tenant_access(ioc.tenant_id, current_user.organization_id)
     correlation = ThreatCorrelationEngine(db)
     related = await correlation.correlate_ioc(ioc.id)
     return {
@@ -270,7 +275,11 @@ async def list_vulnerabilities(
     db: DBDependency,
     limit: int = Query(50, ge=1, le=200),
 ):
-    result = await db.execute(select(VulnerabilityIntelligence).order_by(VulnerabilityIntelligence.cvss_score.desc()).limit(limit))
+    stmt = select(VulnerabilityIntelligence).order_by(VulnerabilityIntelligence.cvss_score.desc())
+    filt = tenant_filter(VulnerabilityIntelligence, current_user.organization_id)
+    if filt is not None:
+        stmt = stmt.where(filt)
+    result = await db.execute(stmt.limit(limit))
     return [_vuln_to_dict(v) for v in result.scalars().all()]
 
 
@@ -284,6 +293,7 @@ async def get_vulnerability(
     v = result.scalar_one_or_none()
     if not v:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vulnerability not found")
+    await ensure_tenant_access(v.tenant_id, current_user.organization_id)
     return _vuln_to_dict(v)
 
 
@@ -368,7 +378,11 @@ async def threat_map(
     db: DBDependency,
 ):
     # Map points derived from known IOCs. Coordinates are synthetic.
-    result = await db.execute(select(ThreatIOC).where(ThreatIOC.type == "ip").where(ThreatIOC.malicious == True).limit(50))
+    stmt = select(ThreatIOC).where(ThreatIOC.type == "ip").where(ThreatIOC.malicious == True).limit(50)
+    filt = tenant_filter(ThreatIOC, current_user.organization_id)
+    if filt is not None:
+        stmt = stmt.where(filt)
+    result = await db.execute(stmt)
     points = []
     for idx, ioc in enumerate(result.scalars().all()):
         points.append({
@@ -390,11 +404,19 @@ async def search_threats(
     limit: int = Query(20, ge=1, le=100),
 ):
     pattern = f"%{q}%"
-    iocs = (await db.execute(select(ThreatIOC).where(ThreatIOC.value.ilike(pattern)).limit(limit))).scalars().all()
+    stmt_iocs = select(ThreatIOC).where(ThreatIOC.value.ilike(pattern)).limit(limit)
+    stmt_vulns = select(VulnerabilityIntelligence).where(VulnerabilityIntelligence.cve.ilike(pattern)).limit(limit)
+    filt_iocs = tenant_filter(ThreatIOC, current_user.organization_id)
+    filt_vulns = tenant_filter(VulnerabilityIntelligence, current_user.organization_id)
+    if filt_iocs is not None:
+        stmt_iocs = stmt_iocs.where(filt_iocs)
+    if filt_vulns is not None:
+        stmt_vulns = stmt_vulns.where(filt_vulns)
+    iocs = (await db.execute(stmt_iocs)).scalars().all()
     malware = (await db.execute(select(Malware).where(Malware.family.ilike(pattern)).limit(limit))).scalars().all()
     actors = (await db.execute(select(ThreatActor).where(ThreatActor.name.ilike(pattern)).limit(limit))).scalars().all()
     campaigns = (await db.execute(select(Campaign).where(Campaign.campaign_name.ilike(pattern)).limit(limit))).scalars().all()
-    vulns = (await db.execute(select(VulnerabilityIntelligence).where(VulnerabilityIntelligence.cve.ilike(pattern)).limit(limit))).scalars().all()
+    vulns = (await db.execute(stmt_vulns)).scalars().all()
 
     return {
         "iocs": [_ioc_to_dict(ioc) for ioc in iocs],

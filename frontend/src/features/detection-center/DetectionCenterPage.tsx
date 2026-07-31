@@ -324,7 +324,7 @@ export function DetectionCenterPage() {
                           const url = URL.createObjectURL(blob)
                           const a = document.createElement('a')
                           a.href = url
-                          a.download = `${selectedRule.name.replace(/\s+/g, '_').toLowerCase()}.yml`
+                          a.download = `${(selectedRule.name ?? 'rule').replace(/\s+/g, '_').toLowerCase()}.yml`
                           a.click()
                           URL.revokeObjectURL(url)
                         }}

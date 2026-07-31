@@ -131,7 +131,7 @@ export function ThreatDashboard() {
           <div className="space-y-2">
             {dash?.feed_health?.map((feed: any) => (
               <div key={feed.name} className="flex items-center justify-between rounded-md border border-white/[0.07] bg-[#17181b]/50 px-3 py-2">
-                <span className="text-sm text-gray-200 capitalize">{feed.name.replace(/_/g, ' ')}</span>
+                <span className="text-sm text-gray-200 capitalize">{(feed.name ?? '').replace(/_/g, ' ')}</span>
                 {feed.healthy ? <ShieldCheck className="h-4 w-4 text-emerald-400" /> : <AlertTriangle className="h-4 w-4 text-red-400" />}
               </div>
             ))}

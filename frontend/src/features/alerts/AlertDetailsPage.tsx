@@ -10,10 +10,6 @@ import { severityLabel } from '@/utils/formatters'
 import apiClient, { analyzeAlert, enrichAlert } from '@/services/api'
 import { Alert, AiAnalysis } from '@/types'
 
-const demoAlerts: Record<number, Alert> = {
-  1: { id: 1, wazuh_alert_id: 'wazuh-1001', title: 'FortiGate deny to RDP', description: 'Firewall denied an inbound RDP connection attempt.', severity: 13, source_ip: '10.0.0.55', destination_ip: '192.168.1.10', rule_id: '100102', mitre_technique: 'T1190', status: 'new', raw_log: '{"rule":{"id":"100102","level":13}}', created_at: '2024-07-25T10:00:00Z' },
-}
-
 export function AlertDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const alertId = Number(id)
@@ -21,13 +17,12 @@ export function AlertDetailsPage() {
   const [enrichment, setEnrichment] = useState<Record<string, unknown> | null>(null)
   const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null)
 
-  const { data: alert, isLoading } = useQuery({
+  const { data: alert, isLoading } = useQuery<Alert>({
     queryKey: ['alert', alertId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/alerts/${alertId}`)
       return data as Alert
     },
-    initialData: demoAlerts[alertId],
   })
 
   const enrichMutation = useMutation({

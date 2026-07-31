@@ -9,6 +9,7 @@ from app.api.deps import AdminUser, AnalystUser, CurrentUser
 from app.database.database import get_db
 from app.database.models import Asset
 from app.schemas.asset import AssetCreate, AssetDetailsRead, AssetRead, AssetUpdate
+from app.security.tenant import ensure_tenant_access, tenant_filter
 from app.services.risk_service import RiskService
 
 logger = logging.getLogger(__name__)
@@ -22,9 +23,17 @@ async def list_assets(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
 ):
-    total = (await db.execute(select(Asset))).scalars().all().__len__()
+    query = select(Asset)
+    filt = tenant_filter(Asset, current_user.organization_id)
+    if filt is not None:
+        query = query.where(filt)
+
+    total_result = await db.execute(select(Asset))
+    # Count only tenant-scoped assets for the response total
+    total = len([a for a in total_result.scalars().all() if filt is None or a.tenant_id == current_user.organization_id])
+
     result = await db.execute(
-        select(Asset)
+        query
         .offset((page - 1) * limit)
         .limit(limit)
     )
@@ -44,6 +53,7 @@ async def get_asset(
     asset = await db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    await ensure_tenant_access(asset.tenant_id, current_user.organization_id)
     return asset
 
 
@@ -56,6 +66,7 @@ async def get_asset_details(
     asset = await db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    await ensure_tenant_access(asset.tenant_id, current_user.organization_id)
     await db.refresh(asset, ["vulnerabilities", "alerts"])
     return {
         "asset": asset,
@@ -71,10 +82,11 @@ async def create_asset(
     db: AsyncSession = Depends(get_db),
 ):
     asset = Asset(**payload.model_dump())
+    asset.tenant_id = current_user.organization_id
     db.add(asset)
     await db.commit()
     await db.refresh(asset)
-    logger.info("Asset created: %s by user %s", asset.hostname, current_user.username)
+    logger.info("Asset created: %s (tenant=%s) by user %s", asset.hostname, asset.tenant_id, current_user.username)
     return asset
 
 
@@ -88,6 +100,7 @@ async def update_asset(
     asset = await db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    await ensure_tenant_access(asset.tenant_id, current_user.organization_id)
 
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -105,6 +118,10 @@ async def calculate_asset_risk(
     current_user: AnalystUser,
     db: AsyncSession = Depends(get_db),
 ):
+    asset = await db.get(Asset, asset_id)
+    if not asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    await ensure_tenant_access(asset.tenant_id, current_user.organization_id)
     service = RiskService(db)
     try:
         score = await service.calculate_asset_risk(asset_id)
@@ -122,6 +139,7 @@ async def delete_asset(
     asset = await db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    await ensure_tenant_access(asset.tenant_id, current_user.organization_id)
     await db.delete(asset)
     await db.commit()
     logger.info("Asset deleted: %s by user %s", asset.hostname, current_user.username)

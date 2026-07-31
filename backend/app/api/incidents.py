@@ -3,13 +3,15 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import AdminUser, AnalystUser, CurrentUser
 from app.database.database import get_db
 from app.database.models import Alert, Incident, IncidentStatus, IncidentTimeline
 from app.schemas.incident import IncidentCreate, IncidentRead, IncidentUpdate, TimelineNoteCreate
+from app.security.tenant import ensure_tenant_access, tenant_filter
 from app.schemas.report import IncidentReportRequest
 from app.services.ai_engine.report_generator import IncidentReportGenerator
 
@@ -26,14 +28,20 @@ async def list_incidents(
     page: int = 1,
     limit: int = 20,
 ):
-    total_result = await db.execute(select(Incident))
-    total = len(total_result.scalars().all())
+    query = select(Incident).options(selectinload(Incident.timeline), selectinload(Incident.alerts))
+    filt = tenant_filter(Incident, current_user.organization_id)
+    if filt is not None:
+        query = query.where(filt)
+
+    count_query = select(func.count()).select_from(query.subquery())
+    count_result = await db.execute(count_query)
+    total = count_result.scalar_one()
 
     result = await db.execute(
-        select(Incident)
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .order_by(Incident.created_at.desc())
+        query
+            .offset((page - 1) * limit)
+            .limit(limit)
+            .order_by(Incident.created_at.desc())
     )
     incidents = result.scalars().all()
     return {
@@ -51,6 +59,7 @@ async def get_incident(
     incident = await db.get(Incident, incident_id)
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    await ensure_tenant_access(incident.tenant_id, current_user.organization_id)
     await db.refresh(incident, ["timeline", "alerts"])
     return incident
 
@@ -67,6 +76,7 @@ async def create_incident(
         status=payload.status,
         description=payload.description,
         assigned_user_id=payload.assigned_user_id,
+        tenant_id=current_user.organization_id,
     )
     db.add(incident)
     await db.flush()
@@ -99,6 +109,7 @@ async def update_incident(
     incident = await db.get(Incident, incident_id)
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    await ensure_tenant_access(incident.tenant_id, current_user.organization_id)
 
     update_data = payload.model_dump(exclude_unset=True)
     old_status = incident.status
@@ -135,6 +146,7 @@ async def add_timeline_note(
     incident = await db.get(Incident, incident_id)
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    await ensure_tenant_access(incident.tenant_id, current_user.organization_id)
 
     note = IncidentTimeline(
         incident_id=incident.id,
@@ -160,6 +172,7 @@ async def assign_incident(
     incident = await db.get(Incident, incident_id)
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    await ensure_tenant_access(incident.tenant_id, current_user.organization_id)
 
     from app.database.models import User
     user = await db.get(User, user_id)
@@ -190,6 +203,7 @@ async def delete_incident(
     incident = await db.get(Incident, incident_id)
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    await ensure_tenant_access(incident.tenant_id, current_user.organization_id)
     await db.delete(incident)
     await db.commit()
     logger.info("Incident deleted: %s by user %s", incident.name, current_user.username)
@@ -205,6 +219,7 @@ async def generate_incident_report(
     incident = await db.get(Incident, incident_id)
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    await ensure_tenant_access(incident.tenant_id, current_user.organization_id)
 
     generator = IncidentReportGenerator(db)
     report = await generator.generate(incident)

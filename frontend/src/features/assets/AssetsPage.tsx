@@ -6,12 +6,6 @@ import { formatDate } from '@/utils/formatters'
 import apiClient from '@/services/api'
 import { Asset } from '@/types'
 
-const demoAssets: Asset[] = [
-  { id: 1, hostname: 'FortiGate-60F', ip_address: '192.168.1.1', type: 'firewall', operating_system: 'FortiOS', criticality: 95, risk_score: 62, last_seen: '2024-07-25T12:00:00Z', created_at: '2024-01-01' },
-  { id: 2, hostname: 'Windows-Server-2019', ip_address: '192.168.1.10', type: 'windows_server', operating_system: 'Windows Server 2019', criticality: 85, risk_score: 78, last_seen: '2024-07-25T11:58:00Z', created_at: '2024-01-01' },
-  { id: 3, hostname: 'Linux-Database-Server', ip_address: '192.168.1.20', type: 'database', operating_system: 'Ubuntu 22.04', criticality: 90, risk_score: 82, last_seen: '2024-07-25T11:55:00Z', created_at: '2024-01-01' },
-]
-
 export function AssetsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['assets'],
@@ -19,7 +13,6 @@ export function AssetsPage() {
       const { data } = await apiClient.get('/assets')
       return data as { data: Asset[] }
     },
-    initialData: { data: demoAssets },
   })
 
   const assets = data?.data || []

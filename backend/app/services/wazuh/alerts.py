@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from opensearchpy import OpenSearch
@@ -140,3 +141,16 @@ class WazuhAlertsClient:
                 "avg_level": bucket.get("avg_level", {}).get("value"),
             }
         return stats
+
+    async def count_alerts(self, hours: int = 24, index: str = "wazuh-alerts-*") -> int:
+        """Return the number of indexed alerts in the last N hours without fetching hits."""
+        client = self._get_client()
+        now = datetime.now(timezone.utc)
+        start = (now - timedelta(hours=hours)).isoformat()
+        query = {"bool": {"must": [{"range": {"timestamp": {"gte": start}}}]}}
+        try:
+            response = await asyncio.to_thread(client.count, index=index, body={"query": query})
+            return int(response.get("count", 0))
+        except OpenSearchException as exc:
+            logger.error("OpenSearch count query failed: %s", exc)
+            raise WazuhAlertsClientError("OpenSearch count query failed") from exc

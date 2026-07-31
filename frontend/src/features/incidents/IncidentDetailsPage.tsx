@@ -6,18 +6,9 @@ import { CheckCircle2, FileText, Loader2, MessageSquare, Sparkles, StickyNote, U
 import { PageHeader } from '@/components/PageHeader'
 import { StatusBadge } from '@/components/StatusBadge'
 import { ChartCard } from '@/components/ChartCard'
-import { formatDate } from '@/utils/formatters'
+import { formatDate, formatDateTime } from '@/utils/formatters'
 import apiClient, { addIncidentTimelineNote, generateIncidentReport, investigateIncidentWithAI, updateIncident } from '@/services/api'
 import { Incident } from '@/types'
-
-const demoIncident: Incident = {
-  id: 1,
-  name: 'RDP brute-force campaign',
-  severity: 'high',
-  status: 'open',
-  description: 'Multiple failed RDP logins observed from 10.0.0.55 targeting Windows Server.',
-  created_at: '2024-07-25T09:00:00Z',
-}
 
 const statusOptions: Incident['status'][] = ['open', 'in_progress', 'resolved', 'closed']
 const severityOptions: Incident['severity'][] = ['low', 'medium', 'high', 'critical']
@@ -30,13 +21,12 @@ export function IncidentDetailsPage() {
   const [report, setReport] = useState<{ markdown: string; generated_at: string } | null>(null)
   const [aiReport, setAiReport] = useState<Record<string, unknown> | null>(null)
 
-  const { data: incident, isLoading } = useQuery({
+  const { data: incident, isLoading } = useQuery<Incident>({
     queryKey: ['incident', incidentId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/incidents/${incidentId}`)
       return data as Incident
     },
-    initialData: incidentId === 1 ? demoIncident : undefined,
   })
 
   const updateMutation = useMutation({
@@ -228,7 +218,7 @@ export function IncidentDetailsPage() {
       {report && (
         <ChartCard title="Generated Report">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs text-gray-500">Generated at {new Date(report.generated_at).toLocaleString()}</p>
+            <p className="text-xs text-gray-500">Generated at {formatDateTime(report.generated_at)}</p>
             <button
               onClick={() => {
                 const blob = new Blob([report.markdown], { type: 'text/markdown' })

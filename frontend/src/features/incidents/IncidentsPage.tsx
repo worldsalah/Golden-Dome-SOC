@@ -2,16 +2,12 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Loader2, Plus, Search } from 'lucide-react'
+import { Loader2, Plus, Search, GitMerge } from 'lucide-react'
 import { StatusBadge } from '@/components/StatusBadge'
+import { ChartCard } from '@/components/ChartCard'
 import { formatDate } from '@/utils/formatters'
-import { createIncident, listIncidents } from '@/services/api'
+import { createIncident, listIncidents, getCorrelatedIncidents } from '@/services/api'
 import { Incident } from '@/types'
-
-const demoIncidents: Incident[] = [
-  { id: 1, name: 'RDP brute-force campaign', severity: 'high', status: 'open', created_at: '2024-07-25T09:00:00Z' },
-  { id: 2, name: 'Suspicious DNS exfiltration', severity: 'medium', status: 'in_progress', created_at: '2024-07-24T16:20:00Z' },
-]
 
 export function IncidentsPage() {
   const queryClient = useQueryClient()
@@ -25,10 +21,15 @@ export function IncidentsPage() {
     description: '',
   })
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<{ data: Incident[] }>({
     queryKey: ['incidents'],
     queryFn: listIncidents,
-    initialData: { data: demoIncidents },
+  })
+
+  const { data: correlatedData, isLoading: correlatedLoading } = useQuery({
+    queryKey: ['correlated-incidents'],
+    queryFn: () => getCorrelatedIncidents(24, 2),
+    refetchInterval: 30_000,
   })
 
   const createMutation = useMutation({
@@ -42,7 +43,7 @@ export function IncidentsPage() {
 
   const incidents = data?.data.filter((i) => {
     const matchesStatus = statusFilter ? i.status === statusFilter : true
-    const matchesSearch = search ? i.name.toLowerCase().includes(search.toLowerCase()) : true
+    const matchesSearch = search ? (i.name ?? '').toLowerCase().includes(search.toLowerCase()) : true
     return matchesStatus && matchesSearch
   }) || []
 
@@ -118,6 +119,67 @@ export function IncidentsPage() {
           </tbody>
         </table>
       </div>
+
+      <ChartCard title="Auto-Correlated Incidents from Live Wazuh Alerts" className="mt-6">
+        <p className="mb-3 text-xs text-gray-500">
+          Automatically clustered from Wazuh alerts by source IP, rule ID, agent, and MITRE technique (last 24h).
+        </p>
+        {correlatedLoading ? (
+          <p className="text-sm text-gray-500">Correlating alerts...</p>
+        ) : (correlatedData?.incidents || []).length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No correlated incidents detected. Correlation requires at least 2 alerts sharing a common attribute (source IP, rule, agent, or MITRE technique).
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {(correlatedData?.incidents || []).map((inc, i) => (
+              <motion.div
+                key={inc.cluster_key}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-md border border-white/[0.07] bg-[#17181b]/50 p-4"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <GitMerge className="mt-0.5 h-4 w-4 text-[#c97848]" />
+                    <div>
+                      <p className="text-sm font-semibold text-white">{inc.name}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                        <span className="capitalize"><StatusBadge status={inc.severity} /></span>
+                        <span>·</span>
+                        <span>{inc.alert_count} alerts</span>
+                        {(inc.source_ips?.length ?? 0) > 0 && <span>· IPs: {inc.source_ips.join(', ')}</span>}
+                        {(inc.affected_agents?.length ?? 0) > 0 && <span>· Agents: {inc.affected_agents.join(', ')}</span>}
+                        {(inc.mitre_techniques?.length ?? 0) > 0 && <span>· MITRE: {inc.mitre_techniques.join(', ')}</span>}
+                      </div>
+                      {inc.first_seen && inc.last_seen && (
+                        <p className="mt-1 text-[10px] text-stone-600">
+                          {formatDate(inc.first_seen)} → {formatDate(inc.last_seen)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {((inc.timeline?.length ?? 0) > 0) && (
+                  <div className="mt-3 border-t border-white/[0.05] pt-2">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-stone-600">Timeline</p>
+                    <div className="max-h-32 space-y-1 overflow-y-auto">
+                      {(inc.timeline ?? []).slice(0, 10).map((t, j) => (
+                        <div key={j} className="flex items-center gap-2 text-[11px] text-stone-500">
+                          <span className="font-mono text-stone-600">{String(t?.timestamp ?? '').slice(11, 19)}</span>
+                          <span className="text-stone-400">{t?.event ?? ''}</span>
+                          <span className="ml-auto text-stone-600">L{t?.level ?? ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </ChartCard>
 
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">

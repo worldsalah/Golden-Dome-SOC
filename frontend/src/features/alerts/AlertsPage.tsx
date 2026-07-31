@@ -3,16 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Download, Loader2, RefreshCw, Search } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { severityLabel } from '@/utils/formatters'
+import { severityLabel, formatTime } from '@/utils/formatters'
 import apiClient, { syncAlerts, updateAlertStatus } from '@/services/api'
 import { Alert } from '@/types'
-
-const demoAlerts: Alert[] = [
-  { id: 1, wazuh_alert_id: 'wazuh-1001', title: 'FortiGate deny to RDP', severity: 13, source_ip: '10.0.0.55', destination_ip: '192.168.1.10', rule_id: '100102', mitre_technique: 'T1190', status: 'new', created_at: '2024-07-25T10:00:00Z' },
-  { id: 2, wazuh_alert_id: 'wazuh-1002', title: 'Port scan detected', severity: 12, source_ip: '10.0.0.55', destination_ip: '192.168.1.20', rule_id: '100101', mitre_technique: 'T1046', status: 'investigating', created_at: '2024-07-25T09:45:00Z' },
-  { id: 3, wazuh_alert_id: 'wazuh-1003', title: 'Windows failed logon', severity: 8, source_ip: '192.168.1.100', rule_id: '60122', mitre_technique: 'T1110', status: 'acknowledged', created_at: '2024-07-25T08:30:00Z' },
-  { id: 4, wazuh_alert_id: 'wazuh-1004', title: 'Linux sudo escalation', severity: 10, source_ip: '192.168.1.20', rule_id: '5402', mitre_technique: 'T1078', status: 'new', created_at: '2024-07-25T07:15:00Z' },
-]
 
 const statusOptions: Alert['status'][] = ['new', 'acknowledged', 'investigating', 'resolved', 'false_positive']
 
@@ -36,8 +29,10 @@ export function AlertsPage() {
       const { data } = await apiClient.get('/alerts', { params: { page: 1, limit: 50 } })
       return data as { data: Alert[] }
     },
-    initialData: { data: demoAlerts },
+    refetchInterval: 10_000,
   })
+
+  const alerts = useMemo(() => data?.data || [], [data])
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) => updateAlertStatus(id, status),
@@ -51,17 +46,17 @@ export function AlertsPage() {
 
   const filteredAlerts = useMemo(
     () =>
-      data.data.filter((alert) => {
+      alerts.filter((alert) => {
         const matchesSearch =
-          alert.title.toLowerCase().includes(search.toLowerCase()) ||
-          alert.source_ip?.includes(search) ||
-          alert.wazuh_alert_id.includes(search) ||
-          alert.mitre_technique?.includes(search)
+          (alert.title ?? '').toLowerCase().includes(search.toLowerCase()) ||
+          (alert.source_ip ?? '').includes(search) ||
+          (alert.wazuh_alert_id ?? '').includes(search) ||
+          (alert.mitre_technique ?? '').includes(search)
         const matchesStatus = statusFilter ? alert.status === statusFilter : true
         const matchesSeverity = severityFilter ? severityLabel(alert.severity).toLowerCase() === severityFilter : true
         return matchesSearch && matchesStatus && matchesSeverity
       }),
-    [data.data, search, statusFilter, severityFilter],
+    [alerts, search, statusFilter, severityFilter],
   )
 
   const selected = filteredAlerts.find((a) => a.id === selectedId) ?? filteredAlerts[0] ?? null
@@ -80,10 +75,10 @@ export function AlertsPage() {
   }
 
   const counts = useMemo(() => {
-    const critical = data.data.filter((a) => a.severity >= 12).length
-    const open = data.data.filter((a) => a.status === 'new' || a.status === 'investigating').length
-    return { total: data.data.length, critical, open }
-  }, [data.data])
+    const critical = alerts.filter((a) => a.severity >= 12).length
+    const open = alerts.filter((a) => a.status === 'new' || a.status === 'investigating').length
+    return { total: alerts.length, critical, open }
+  }, [alerts])
 
   return (
     <div className="space-y-4">
@@ -161,14 +156,14 @@ export function AlertsPage() {
                         <span className="truncate text-[13px] font-medium text-stone-200">{alert.title}</span>
                       </div>
                       <span className="shrink-0 font-mono text-[10px] text-stone-600">
-                        {new Date(alert.created_at).toLocaleTimeString()}
+                        {formatTime(alert.created_at)}
                       </span>
                     </div>
                     <div className="mt-1.5 flex items-center gap-4 font-mono text-[11px] text-stone-500">
                       <span>#{alert.id}</span>
                       {alert.source_ip && <span>{alert.source_ip}</span>}
                       {alert.mitre_technique && <span className="text-[#d8b17a]">{alert.mitre_technique}</span>}
-                      <span className="ml-auto capitalize text-stone-600">{alert.status.replace('_', ' ')}</span>
+                      <span className="ml-auto capitalize text-stone-600">{(alert.status ?? '').replace('_', ' ')}</span>
                     </div>
                   </button>
                 )

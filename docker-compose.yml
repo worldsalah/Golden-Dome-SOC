@@ -171,8 +171,16 @@ services:
       INDEXER_URL: https://wazuh-indexer:9200
       INDEXER_USERNAME: ${WAZUH_INDEXER_USERNAME:-admin}
       INDEXER_PASSWORD: ${WAZUH_INDEXER_PASSWORD:-change-me}
+      WAZUH_API_USERNAME: ${WAZUH_API_USERNAME:-wazuh}
+      WAZUH_API_PASSWORD: ${WAZUH_API_PASSWORD:-wazuh}
     networks: [goldendome]
     restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "curl -sk -u $${WAZUH_API_USERNAME}:$${WAZUH_API_PASSWORD} https://127.0.0.1:55000/security/user/authenticate -X POST >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
     logging: *default-logging
 
   wazuh-indexer:

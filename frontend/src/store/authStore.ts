@@ -36,6 +36,14 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
+      deserialize: (str) => {
+        if (!str) return undefined as any
+        try {
+          return JSON.parse(str)
+        } catch {
+          return undefined as any
+        }
+      },
     },
   ),
 )

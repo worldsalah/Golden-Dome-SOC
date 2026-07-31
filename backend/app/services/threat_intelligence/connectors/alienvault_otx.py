@@ -26,15 +26,17 @@ class AlienVaultOTXConnector(BaseConnector):
         return None
 
     async def enrich(self, ioc: str, ioc_type: str) -> dict[str, Any]:
-        if not self.api_key:
-            return self._normalize_common()
+        # OTX is a free community API that works without a key for basic queries
         endpoint = self._endpoint(ioc, ioc_type)
         if not endpoint:
             return self._normalize_common()
         try:
+            headers = {}
+            if self.api_key:
+                headers["X-OTX-API-KEY"] = self.api_key
             response = await self._retryable_get(
                 endpoint,
-                headers={"X-OTX-API-KEY": self.api_key},
+                headers=headers,
             )
             if response.status_code == 200:
                 data = response.json()

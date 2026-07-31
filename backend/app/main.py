@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -9,11 +10,12 @@ from sqlalchemy import text
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.api import ai, alerts, assets, auth, detection_rules, incidents, mitre, reports, risk, soar, threat, threat_intel, users, validation, wazuh
+from app.api import ai, alerts, assets, audit, auth, connectors, deployment, detection_rules, discovery, hotel, incidents, mitre, onboarding, organizations, posture, reports, risk, security, soar, threat, threat_intel, users, validation, wazuh
 from app.config.settings import get_settings
 from app.database.database import AsyncSessionLocal, Base, engine
 from app.utils.logging import setup_logging
 from app.services.soar_service import SoarService
+from app.services.sync_worker import sync_worker_loop
 from app.utils.seed import seed_database
 
 logger = logging.getLogger(__name__)
@@ -34,7 +36,14 @@ def create_application() -> FastAPI:
                 await seed_database(session)
             async with AsyncSessionLocal() as session:
                 await SoarService(session).seed_builtin_playbooks()
+        sync_task = asyncio.create_task(sync_worker_loop())
+        logger.info("Started Wazuh sync background worker")
         yield
+        sync_task.cancel()
+        try:
+            await sync_task
+        except asyncio.CancelledError:
+            pass
         logger.info("Shutting down %s", settings.APP_NAME)
         await engine.dispose()
 
@@ -63,6 +72,7 @@ def create_application() -> FastAPI:
 
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(TenantIsolationMiddleware)
 
     # Each router defines its own sub-path; the common /api prefix is added here.
     app.include_router(auth.router, prefix="/api")
@@ -80,6 +90,15 @@ def create_application() -> FastAPI:
     app.include_router(wazuh.router, prefix="/api")
     app.include_router(soar.router, prefix="/api")
     app.include_router(validation.router, prefix="/api")
+    app.include_router(organizations.router, prefix="/api")
+    app.include_router(audit.router, prefix="/api")
+    app.include_router(connectors.router, prefix="/api")
+    app.include_router(onboarding.router, prefix="/api")
+    app.include_router(discovery.router, prefix="/api")
+    app.include_router(posture.router, prefix="/api")
+    app.include_router(hotel.router, prefix="/api")
+    app.include_router(deployment.router, prefix="/api")
+    app.include_router(security.router, prefix="/api")
 
     @app.get("/health", tags=["Health"])
     async def health_check():
@@ -128,6 +147,24 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Content-Security-Policy"] = "default-src 'self'"
         return response
+
+
+class TenantIsolationMiddleware(BaseHTTPMiddleware):
+    """Extract tenant_id from JWT and attach to request state for query scoping."""
+
+    async def dispatch(self, request: Request, call_next):
+        from app.security.jwt import decode_token
+        auth = request.headers.get("authorization", "")
+        if auth.startswith("Bearer "):
+            token = auth[7:]
+            payload = decode_token(token)
+            if payload and payload.get("type") == "access":
+                request.state.tenant_id = payload.get("tenant_id")
+            else:
+                request.state.tenant_id = None
+        else:
+            request.state.tenant_id = None
+        return await call_next(request)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):

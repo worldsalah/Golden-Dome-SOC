@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
     TRUSTED_HOSTS: str = "localhost,127.0.0.1"
-    SEED_DEMO_DATA: bool = True
+    SEED_DEMO_DATA: bool = False
     ADMIN_USERNAME: str = "admin"
     ADMIN_EMAIL: str = "admin@goldendome.local"
     ADMIN_PASSWORD: str = "admin"

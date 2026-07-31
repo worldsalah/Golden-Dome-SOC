@@ -1,12 +1,13 @@
 import json
 import logging
-from typing import Any
+from typing import Any, Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import Settings, get_settings
 from app.database.models import Alert, Asset, AssetVulnerability, Incident, RiskScore, ThreatIntelligence
+from app.security.tenant import tenant_filter
 from app.services.ai_engine.knowledge_base import KnowledgeBase
 
 logger = logging.getLogger(__name__)
@@ -15,8 +16,9 @@ logger = logging.getLogger(__name__)
 class RiskScorer:
     """Explainable risk scoring for alerts, assets, and incidents."""
 
-    def __init__(self, db: AsyncSession, settings: Settings | None = None):
+    def __init__(self, db: AsyncSession, settings: Settings | None = None, tenant_id: int | None = None):
         self.db = db
+        self.tenant_id = tenant_id
         self.settings = settings or get_settings()
         self.weights = {
             "severity": self.settings.RISK_WEIGHT_SEVERITY,
@@ -131,6 +133,7 @@ class RiskScorer:
         record = RiskScore(
             target_type=target_type,
             target_id=target_id,
+            tenant_id=self.tenant_id,
             score=score,
             reason=json.dumps(reason),
         )
@@ -142,10 +145,11 @@ class RiskScorer:
     async def _max_vuln_score(self, asset_id: int | None) -> float:
         if not asset_id:
             return 0.0
-        result = await self.db.execute(
-            select(AssetVulnerability.cvss_score)
-            .where(AssetVulnerability.asset_id == asset_id)
-        )
+        stmt = select(AssetVulnerability.cvss_score).where(AssetVulnerability.asset_id == asset_id)
+        filt = tenant_filter(AssetVulnerability, self.tenant_id)
+        if filt is not None:
+            stmt = stmt.where(filt)
+        result = await self.db.execute(stmt)
         scores = [s for s in result.scalars().all() if s is not None]
         if not scores:
             return 0.0
@@ -154,24 +158,42 @@ class RiskScorer:
     async def _threat_intel_score(self, indicator: str | None) -> float:
         if not indicator:
             return 0.0
-        result = await self.db.execute(
-            select(ThreatIntelligence.reputation_score)
-            .where(ThreatIntelligence.indicator == indicator)
-            .order_by(ThreatIntelligence.last_checked.desc())
-        )
+        stmt = select(ThreatIntelligence.reputation_score).where(ThreatIntelligence.indicator == indicator).order_by(ThreatIntelligence.last_checked.desc())
+        filt = tenant_filter(ThreatIntelligence, self.tenant_id)
+        if filt is not None:
+            stmt = stmt.where(filt)
+        result = await self.db.execute(stmt)
         scores = result.scalars().all()
         return max(scores) if scores else 0.0
+
+    def _tenant_filter_stmt(self, stmt, model):
+        filt = tenant_filter(model, self.tenant_id)
+        if filt is not None:
+            stmt = stmt.where(filt)
+        return stmt
 
     async def _historical_score(self, asset_id: int | None, source_ip: str | None) -> float:
         score = 0
         if asset_id:
-            count_result = await self.db.execute(
-                select(func.count(Alert.id)).where(Alert.asset_id == asset_id)
+            stmt = self._tenant_filter_stmt(
+                select(func.count(Alert.id)).where(Alert.asset_id == asset_id),
+                Alert,
             )
+            count_result = await self.db.execute(stmt)
             score += min(count_result.scalar_one() * 5, 50)
         if source_ip:
-            count_result = await self.db.execute(
-                select(func.count(Alert.id)).where(Alert.source_ip == source_ip)
+            stmt = self._tenant_filter_stmt(
+                select(func.count(Alert.id)).where(Alert.source_ip == source_ip),
+                Alert,
             )
+            count_result = await self.db.execute(stmt)
             score += min(count_result.scalar_one() * 5, 50)
         return score
+
+    async def get_top_risky_assets(self, limit: int = 10) -> Sequence[Asset]:
+        stmt = select(Asset).order_by(desc(Asset.risk_score)).limit(limit)
+        filt = tenant_filter(Asset, self.tenant_id)
+        if filt is not None:
+            stmt = stmt.where(filt)
+        result = await self.db.execute(stmt)
+        return result.scalars().all()

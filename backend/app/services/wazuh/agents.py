@@ -25,7 +25,7 @@ class WazuhAgentsClient:
 
     async def get(self, agent_id: str) -> dict[str, Any]:
         try:
-            return await self.client.request("GET", f"/agents/{agent_id}")
+            return await self.client.request("GET", "/agents", params={"agents_list": agent_id})
         except WazuhApiClientError:
             raise
         except Exception as exc:

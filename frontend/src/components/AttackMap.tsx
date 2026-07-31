@@ -1,21 +1,17 @@
 import { useEffect, useRef } from 'react'
-
-interface Attack {
-  from: { x: number; y: number }
-  to: { x: number; y: number }
-  color: string
-}
-
-const attacks: Attack[] = [
-  { from: { x: 0.18, y: 0.35 }, to: { x: 0.58, y: 0.42 }, color: '#ef4444' },
-  { from: { x: 0.25, y: 0.55 }, to: { x: 0.55, y: 0.4 }, color: '#f97316' },
-  { from: { x: 0.72, y: 0.28 }, to: { x: 0.58, y: 0.42 }, color: '#f59e0b' },
-  { from: { x: 0.45, y: 0.25 }, to: { x: 0.56, y: 0.45 }, color: '#ef4444' },
-  { from: { x: 0.82, y: 0.6 }, to: { x: 0.6, y: 0.48 }, color: '#c97848' },
-]
+import { useQuery } from '@tanstack/react-query'
+import { getAttackMap } from '@/services/api'
 
 export function AttackMap() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  const { data } = useQuery({
+    queryKey: ['attack-map-canvas'],
+    queryFn: () => getAttackMap(24, 200),
+    refetchInterval: 10_000,
+  })
+
+  const attacks = (data?.attacks || []).filter((a) => a.latitude !== null && a.longitude !== null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -37,7 +33,6 @@ export function AttackMap() {
     resize()
 
     const drawWorld = () => {
-      // Simple stylized world dots
       ctx.fillStyle = 'rgba(6, 182, 212, 0.08)'
       for (let i = 0; i < 120; i++) {
         const px = ((Math.sin(i * 13.5) + 1) / 2) * width
@@ -48,74 +43,80 @@ export function AttackMap() {
       }
     }
 
-    const drawTarget = (x: number, y: number) => {
-      const t = Date.now() / 1000
-      ctx.strokeStyle = 'rgba(6, 182, 212, 0.6)'
-      ctx.lineWidth = 1.5
-      for (let i = 0; i < 3; i++) {
-        const radius = ((t + i * 0.5) % 1.5) * 25 + 2
-        ctx.globalAlpha = 1 - radius / 27
-        ctx.beginPath()
-        ctx.arc(x, y, radius, 0, Math.PI * 2)
-        ctx.stroke()
-      }
-      ctx.globalAlpha = 1
-      ctx.fillStyle = '#c97848'
-      ctx.beginPath()
-      ctx.arc(x, y, 4, 0, Math.PI * 2)
-      ctx.fill()
+    const project = (lon: number, lat: number): [number, number] => {
+      return [((lon + 180) / 360) * width, ((90 - lat) / 180) * height]
     }
 
-    const drawAttack = (attack: Attack, offset: number) => {
-      const fx = attack.from.x * width
-      const fy = attack.from.y * height
-      const tx = attack.to.x * width
-      const ty = attack.to.y * height
+    const severityColor = (level: number): string => {
+      if (level >= 13) return '#ef4444'
+      if (level >= 10) return '#f97316'
+      if (level >= 4) return '#f59e0b'
+      return '#6fbf95'
+    }
 
-      ctx.strokeStyle = attack.color
+    const drawAttack = (lon: number, lat: number, color: string, offset: number) => {
+      const [x, y] = project(lon, lat)
+      const [tx, ty] = project(0, 30)
+
+      ctx.strokeStyle = color
       ctx.lineWidth = 1
       ctx.globalAlpha = 0.3
       ctx.beginPath()
-      ctx.moveTo(fx, fy)
-      ctx.quadraticCurveTo((fx + tx) / 2, Math.min(fy, ty) - 60, tx, ty)
+      ctx.moveTo(x, y)
+      ctx.quadraticCurveTo((x + tx) / 2, Math.min(y, ty) - 60, tx, ty)
       ctx.stroke()
       ctx.globalAlpha = 1
 
       const t = (Date.now() / 1500 + offset) % 1
-      const cx = (1 - t) * (1 - t) * fx + 2 * (1 - t) * t * ((fx + tx) / 2) + t * t * tx
-      const cy =
-        (1 - t) * (1 - t) * fy +
-        2 * (1 - t) * t * (Math.min(fy, ty) - 60) +
-        t * t * ty
+      const cx = (1 - t) * (1 - t) * x + 2 * (1 - t) * t * ((x + tx) / 2) + t * t * tx
+      const cy = (1 - t) * (1 - t) * y + 2 * (1 - t) * t * (Math.min(y, ty) - 60) + t * t * ty
 
-      ctx.fillStyle = attack.color
-      ctx.shadowColor = attack.color
+      ctx.fillStyle = color
+      ctx.shadowColor = color
       ctx.shadowBlur = 10
       ctx.beginPath()
       ctx.arc(cx, cy, 3, 0, Math.PI * 2)
       ctx.fill()
       ctx.shadowBlur = 0
+
+      ctx.fillStyle = color
+      ctx.beginPath()
+      ctx.arc(x, y, 3, 0, Math.PI * 2)
+      ctx.fill()
     }
 
     let animationId: number
     const animate = () => {
       ctx.clearRect(0, 0, width, height)
       drawWorld()
-      attacks.forEach((a, i) => drawAttack(a, i * 0.15))
-      drawTarget(width * 0.58, height * 0.42)
+      attacks.forEach((a, i) => drawAttack(a.longitude!, a.latitude!, severityColor(a.rule_level), i * 0.15))
+      const [tx, ty] = project(0, 30)
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.6)'
+      ctx.lineWidth = 1.5
+      const t = Date.now() / 1000
+      for (let i = 0; i < 3; i++) {
+        const radius = ((t + i * 0.5) % 1.5) * 25 + 2
+        ctx.globalAlpha = 1 - radius / 27
+        ctx.beginPath()
+        ctx.arc(tx, ty, radius, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+      ctx.fillStyle = '#c97848'
+      ctx.beginPath()
+      ctx.arc(tx, ty, 4, 0, Math.PI * 2)
+      ctx.fill()
       animationId = requestAnimationFrame(animate)
     }
     animate()
 
-    const handleResize = () => {
-      resize()
-    }
+    const handleResize = () => resize()
     window.addEventListener('resize', handleResize)
     return () => {
       cancelAnimationFrame(animationId)
       window.removeEventListener('resize', handleResize)
     }
-  }, [])
+  }, [attacks])
 
   return (
     <canvas

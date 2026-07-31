@@ -1,5 +1,5 @@
 interface StatusBadgeProps {
-  status: string
+  status?: string
 }
 
 const statusStyles: Record<string, string> = {
@@ -18,10 +18,11 @@ const statusStyles: Record<string, string> = {
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const style = statusStyles[status.toLowerCase()] || statusStyles.new
+  const safe = status ?? ''
+  const style = statusStyles[safe.toLowerCase()] || statusStyles.new
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${style}`}>
-      {status.replace(/_/g, ' ')}
+      {safe.replace(/_/g, ' ')}
     </span>
   )
 }

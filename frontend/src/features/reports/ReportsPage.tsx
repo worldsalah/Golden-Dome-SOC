@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FileText, Loader2, RefreshCw, Trash2 } from 'lucide-react'
+import { FileText, Loader2, RefreshCw, Trash2, Download, FileSpreadsheet, FileType } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { PageHeader } from '@/components/PageHeader'
 import { ChartCard } from '@/components/ChartCard'
-import { formatDate } from '@/utils/formatters'
-import { generateIncidentReport, listReports, deleteReport } from '@/services/api'
+import { formatDate, formatDateTime } from '@/utils/formatters'
+import { generateIncidentReport, listReports, deleteReport, exportReportCsv, exportReportExcel, exportReportPdf } from '@/services/api'
 import type { IncidentReport } from '@/types'
 
 export function ReportsPage() {
@@ -51,7 +51,31 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reports" subtitle="Generate, download, and manage security reports" />
+      <PageHeader title="Reports" subtitle="Generate, download, and manage security reports from live Wazuh data" />
+
+      <ChartCard title="Export Live Alert Data">
+        <p className="mb-3 text-xs text-gray-500">Export real Wazuh alerts with filtering options. Data is fetched live from OpenSearch.</p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => exportReportCsv({ hours: 24 })}
+            className="flex items-center gap-2 rounded-md border border-white/[0.1] bg-[#1c1e22] px-4 py-2 text-sm text-white hover:bg-white/[0.08]"
+          >
+            <Download className="h-4 w-4" /> Export CSV
+          </button>
+          <button
+            onClick={() => exportReportExcel({ hours: 24 })}
+            className="flex items-center gap-2 rounded-md border border-white/[0.1] bg-[#1c1e22] px-4 py-2 text-sm text-white hover:bg-white/[0.08]"
+          >
+            <FileSpreadsheet className="h-4 w-4" /> Export Excel
+          </button>
+          <button
+            onClick={() => exportReportPdf({ hours: 24 })}
+            className="flex items-center gap-2 rounded-md border border-white/[0.1] bg-[#1c1e22] px-4 py-2 text-sm text-white hover:bg-white/[0.08]"
+          >
+            <FileType className="h-4 w-4" /> Export PDF
+          </button>
+        </div>
+      </ChartCard>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <ChartCard title="Generate Incident Report" className="lg:col-span-1">
@@ -118,7 +142,7 @@ export function ReportsPage() {
       {selectedReport && (
         <ChartCard title="Generated Report Preview">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs text-gray-500">Generated at {new Date(selectedReport.generated_at).toLocaleString()}</p>
+            <p className="text-xs text-gray-500">Generated at {formatDateTime(selectedReport.generated_at)}</p>
             <button onClick={() => downloadMarkdown(selectedReport)} className="rounded-md bg-[#1c1e22] px-3 py-1.5 text-xs text-white hover:bg-white/[0.08]">Download Markdown</button>
           </div>
           <pre className="max-h-[500px] overflow-auto rounded-md bg-gray-950 p-4 text-xs text-gray-300 font-mono whitespace-pre-wrap">

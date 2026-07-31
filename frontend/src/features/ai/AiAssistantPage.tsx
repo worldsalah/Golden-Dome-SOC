@@ -16,6 +16,7 @@ import {
 import { PageHeader } from '@/components/PageHeader'
 import { ChartCard } from '@/components/ChartCard'
 import { StatusBadge } from '@/components/StatusBadge'
+import { formatDateTime } from '@/utils/formatters'
 import type { AiAnalysis } from '@/types'
 import {
   Activity,
@@ -452,7 +453,7 @@ export function AiAssistantPage() {
                   <div key={log.id} className="rounded-md border border-white/[0.1] bg-[#17181b] p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-[#d8b17a]">{log.endpoint}</span>
-                      <span className="text-xs text-gray-500">{new Date(log.created_at).toLocaleString()}</span>
+                      <span className="text-xs text-gray-500">{formatDateTime(log.created_at)}</span>
                     </div>
                     <p className="mt-1 text-xs text-gray-400">{log.response_summary.slice(0, 120)}...</p>
                     <p className="text-xs text-gray-600">Source: {log.source}</p>

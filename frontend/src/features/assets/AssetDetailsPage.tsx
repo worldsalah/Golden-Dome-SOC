@@ -7,19 +7,6 @@ import { ChartCard } from '@/components/ChartCard'
 import { StatusBadge } from '@/components/StatusBadge'
 import { formatDate } from '@/utils/formatters'
 import { calculateAssetRisk, getAssetDetails } from '@/services/api'
-import { Asset } from '@/types'
-
-const demoAsset: Asset = {
-  id: 3,
-  hostname: 'Linux-Database-Server',
-  ip_address: '192.168.1.20',
-  type: 'database',
-  operating_system: 'Ubuntu 22.04 LTS',
-  criticality: 90,
-  risk_score: 82,
-  last_seen: '2024-07-25T11:55:00Z',
-  created_at: '2024-01-01',
-}
 
 export function AssetDetailsPage() {
   const { id } = useParams<{ id: string }>()
@@ -29,14 +16,6 @@ export function AssetDetailsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['asset', assetId, 'details'],
     queryFn: () => getAssetDetails(assetId),
-    initialData: assetId === 3 ? {
-      asset: demoAsset,
-      vulnerabilities: [
-        { id: 1, cve: 'CVE-2024-0001', severity: 'High', cvss_score: 8.1, description: 'Example vulnerability', detected_at: '2024-07-20T10:00:00Z' },
-        { id: 2, cve: 'CVE-2024-0012', severity: 'Medium', cvss_score: 5.3, description: 'Another vulnerability', detected_at: '2024-07-22T10:00:00Z' },
-      ],
-      alerts: [],
-    } : undefined,
   })
 
   const riskMutation = useMutation({
@@ -64,7 +43,7 @@ export function AssetDetailsPage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">{asset.hostname}</h2>
-                <p className="text-sm text-gray-500 capitalize">{asset.type.replace('_', ' ')}</p>
+                <p className="text-sm text-gray-500 capitalize">{(asset.type ?? '').replace('_', ' ')}</p>
               </div>
             </div>
             <button

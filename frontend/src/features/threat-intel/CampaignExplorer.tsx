@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, Loader2, Search, Target } from 'lucide-react'
 import { ChartCard } from '@/components/ChartCard'
 import { listThreatCampaigns, getThreatCampaign } from '@/services/api'
+import { formatDate } from '@/utils/formatters'
 import { typeIcons, scoreColor } from './helpers'
 
 export function CampaignExplorer() {
@@ -21,7 +22,7 @@ export function CampaignExplorer() {
   }
 
   const filtered = (campaigns || []).filter((c: any) =>
-    c.campaign_name.toLowerCase().includes(search.toLowerCase()) ||
+    (c.campaign_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (c.description || '').toLowerCase().includes(search.toLowerCase())
   )
 
@@ -51,7 +52,7 @@ export function CampaignExplorer() {
                   <Target className="h-5 w-5 text-[#d8b17a]" />
                   <div>
                     <p className="text-sm font-medium text-white">{c.campaign_name}</p>
-                    <p className="text-xs text-gray-400">{c.status} • {c.start_date ? new Date(c.start_date).toLocaleDateString() : 'Unknown start'}</p>
+                    <p className="text-xs text-gray-400">{c.status} • {c.start_date ? formatDate(c.start_date) : 'Unknown start'}</p>
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-gray-500" />

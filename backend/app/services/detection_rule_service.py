@@ -6,13 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import DetectionRule, MITRETechnique
 from app.schemas.detection_rule import DetectionRuleCreate, DetectionRuleUpdate
+from app.security.tenant import tenant_filter
 
 logger = logging.getLogger(__name__)
 
 
 class DetectionRuleService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, tenant_id: int | None = None):
         self.db = db
+        self.tenant_id = tenant_id
 
     async def get_rules(
         self,
@@ -23,6 +25,9 @@ class DetectionRuleService:
         search: str | None = None,
     ) -> tuple[Sequence[DetectionRule], int]:
         query = select(DetectionRule)
+        filt = tenant_filter(DetectionRule, self.tenant_id)
+        if filt is not None:
+            query = query.where(filt)
 
         if category:
             query = query.where(DetectionRule.category == category)
@@ -44,20 +49,25 @@ class DetectionRuleService:
         result = await self.db.execute(query)
         return result.scalars().all(), total
 
-    async def get_rule(self, rule_id: int) -> DetectionRule | None:
-        result = await self.db.execute(select(DetectionRule).where(DetectionRule.id == rule_id))
+    async def get_rule(self, rule_id: int, tenant_id: int | None = None) -> DetectionRule | None:
+        tenant_id = tenant_id or self.tenant_id
+        query = select(DetectionRule).where(DetectionRule.id == rule_id)
+        filt = tenant_filter(DetectionRule, tenant_id)
+        if filt is not None:
+            query = query.where(filt)
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_rule(self, data: DetectionRuleCreate, created_by: int | None = None) -> DetectionRule:
-        rule = DetectionRule(**data.model_dump(), created_by=created_by)
+    async def create_rule(self, data: DetectionRuleCreate, created_by: int | None = None, tenant_id: int | None = None) -> DetectionRule:
+        rule = DetectionRule(**data.model_dump(), created_by=created_by, tenant_id=tenant_id or self.tenant_id)
         self.db.add(rule)
         await self.db.commit()
         await self.db.refresh(rule)
         logger.info("Created detection rule %s (id=%d)", rule.name, rule.id)
         return rule
 
-    async def update_rule(self, rule_id: int, data: DetectionRuleUpdate) -> DetectionRule | None:
-        rule = await self.get_rule(rule_id)
+    async def update_rule(self, rule_id: int, data: DetectionRuleUpdate, tenant_id: int | None = None) -> DetectionRule | None:
+        rule = await self.get_rule(rule_id, tenant_id=tenant_id)
         if not rule:
             return None
 
@@ -69,8 +79,8 @@ class DetectionRuleService:
         logger.info("Updated detection rule %d", rule.id)
         return rule
 
-    async def delete_rule(self, rule_id: int) -> bool:
-        rule = await self.get_rule(rule_id)
+    async def delete_rule(self, rule_id: int, tenant_id: int | None = None) -> bool:
+        rule = await self.get_rule(rule_id, tenant_id=tenant_id)
         if not rule:
             return False
         await self.db.delete(rule)

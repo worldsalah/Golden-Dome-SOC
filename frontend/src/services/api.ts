@@ -392,6 +392,43 @@ export async function getSOARStatistics() {
 }
 
 // Alerts
+export interface AlertListItem {
+  id: number
+  wazuh_alert_id: string
+  title: string
+  severity: number
+  status: string
+  rule_id: string | null
+  created_at: string
+}
+
+export interface AlertsListResponse {
+  data: AlertListItem[]
+  meta: { page: number; limit: number; total: number }
+}
+
+export async function getAlerts(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+  const { data } = await apiClient.get('/alerts', { params })
+  return data as AlertsListResponse
+}
+
+export interface ReplayAlertResponse {
+  alert_id: number
+  original_event: Record<string, unknown>
+  current_rule: Record<string, unknown> | null
+  verdict: string
+  match_count_24h: number
+  last_trigger: string | null
+  suggestions: string[]
+  data_source: string
+  generated_at: string
+}
+
+export async function replayAlert(alertId: number) {
+  const { data } = await apiClient.post(`/validation/replay/${alertId}`)
+  return data as ReplayAlertResponse
+}
+
 export async function updateAlertStatus(alertId: number, status: string) {
   const { data } = await apiClient.patch(`/alerts/${alertId}/status`, { status })
   return data as import('@/types').Alert
@@ -403,9 +440,136 @@ export async function syncAlerts(size = 50) {
 }
 
 // Wazuh
+export interface WazuhDashboardResponse {
+  active_agents: number
+  total_agents: number
+  agents: { id?: string; name?: string; ip?: string; status?: string; os?: { name?: string } }[]
+  total_alerts: number
+  alerts_today: number
+  alerts_last_24h: number
+  severity: { critical: number; high: number; medium: number; low: number }
+  top_rules: { rule_id: string; count: number }[]
+  top_source_ips: { ip: string; count: number }[]
+  top_mitre_techniques: { technique: string; count: number }[]
+  top_os: { os: string; count: number }[]
+  alerts_per_hour: { hour: string; count: number }[]
+  generated_at: string
+}
+
+export async function getWazuhDashboard(hours = 24) {
+  const { data } = await apiClient.get('/wazuh/dashboard', { params: { hours } })
+  return data as WazuhDashboardResponse
+}
+
+export interface AttackMapEntry {
+  source_ip: string
+  country: string
+  latitude: number | null
+  longitude: number | null
+  rule_description: string
+  rule_level: number
+  rule_id: string
+  agent_name: string
+  timestamp: string
+  count: number
+}
+
+export interface AttackMapResponse {
+  attacks: AttackMapEntry[]
+  total_unique_sources: number
+  has_geoip: boolean
+  generated_at: string
+}
+
+export async function getAttackMap(hours = 24, size = 200) {
+  const { data } = await apiClient.get('/wazuh/attack-map', { params: { hours, size } })
+  return data as AttackMapResponse
+}
+
+export interface CorrelatedIncident {
+  cluster_key: string
+  name: string
+  severity: string
+  status: string
+  alert_count: number
+  source_ips: string[]
+  affected_agents: string[]
+  rule_ids: string[]
+  mitre_techniques: string[]
+  first_seen: string | null
+  last_seen: string | null
+  timeline: { timestamp: string; event: string; level: number }[]
+  alerts: Record<string, unknown>[]
+}
+
+export async function getCorrelatedIncidents(hours = 24, minClusterSize = 2) {
+  const { data } = await apiClient.get('/wazuh/correlate-incidents', { params: { hours, min_cluster_size: minClusterSize } })
+  return data as { incidents: CorrelatedIncident[]; total: number }
+}
+
+export interface GlobalSearchResults {
+  results: {
+    alerts: { id: string; title: string; severity: number; timestamp: string; source_ip: string; agent: string; type: string }[]
+    agents: { id: string; name: string; ip: string; status: string; type: string }[]
+    vulnerabilities: { id: string; cve: string; package: string; agent: string; type: string }[]
+    techniques: Record<string, unknown>[]
+  }
+  total: number
+  query: string
+}
+
+export async function globalSearch(q: string, limit = 50) {
+  const { data } = await apiClient.get('/wazuh/search', { params: { q, limit } })
+  return data as GlobalSearchResults
+}
+
+export async function getLatestAlerts(size = 10) {
+  const { data } = await apiClient.get('/wazuh/latest-alerts', { params: { size } })
+  return data as { alerts: Record<string, unknown>[]; total: number }
+}
+
+export async function exportReportCsv(params?: { hours?: number; severity?: number; agent_id?: string; rule_id?: string; mitre_technique?: string }) {
+  const { data } = await apiClient.get('/reports/export/csv', { params, responseType: 'blob' })
+  const blob = new Blob([data as BlobPart], { type: 'text/csv' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `alerts_report_${new Date().toISOString().slice(0, 10)}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+export async function exportReportExcel(params?: { hours?: number; severity?: number; agent_id?: string; rule_id?: string; mitre_technique?: string }) {
+  const { data } = await apiClient.get('/reports/export/excel', { params, responseType: 'blob' })
+  const blob = new Blob([data as BlobPart], { type: 'application/vnd.ms-excel' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `alerts_report_${new Date().toISOString().slice(0, 10)}.xls`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+export async function exportReportPdf(params?: { hours?: number; severity?: number }) {
+  const { data } = await apiClient.get('/reports/export/pdf', { params, responseType: 'blob' })
+  const blob = new Blob([data as BlobPart], { type: 'application/pdf' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `alerts_report_${new Date().toISOString().slice(0, 10)}.pdf`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export async function getWazuhVulnerabilities(params?: { agent_id?: string; page?: number; limit?: number }) {
   const { data } = await apiClient.get('/wazuh/vulnerabilities', { params })
-  return data as { data: { id?: string; cve?: string; cvss3_score?: number; severity?: string; package_name?: string; architecture?: string; version?: string; condition?: string; title?: string }[] }
+  return data as { data: { id?: string; cve?: string; cvss3_score?: number; severity?: string; package_name?: string; architecture?: string; version?: string; condition?: string; title?: string; agent_name?: string; agent_id?: string; os?: string; description?: string; classification?: string; category?: string; references?: string[] }[] }
 }
 
 // Detection Validation Center
@@ -468,6 +632,150 @@ export async function getAttackCoverage(group = 'goldendome') {
   return data as AttackCoverageResponse
 }
 
+export interface FalsePositiveRuleAnalysis {
+  rule_id: string
+  detection_name: string
+  alert_count: number
+  real_incidents: number
+  false_positive_count: number
+  false_positive_rate: number | null
+  repeated_alerts: number
+  confidence: number
+  suggestions: string[]
+}
+
+export interface FalsePositiveAnalysisResponse {
+  rules: FalsePositiveRuleAnalysis[]
+  total_rules_analyzed: number
+  rules_with_disposition_data: number
+  avg_false_positive_rate: number | null
+  data_source: string
+  generated_at: string
+}
+
+export async function getFalsePositiveAnalysis(group = 'goldendome') {
+  const { data } = await apiClient.get('/validation/false-positive-analysis', { params: { group } })
+  return data as FalsePositiveAnalysisResponse
+}
+
+export interface DaemonHealth {
+  name: string
+  status: string
+}
+
+export interface DetectionPerformanceResponse {
+  api_latency_ms: number
+  indexer_latency_ms: number
+  events_per_second: number | null
+  events_dropped_per_hour: number | null
+  drop_percentage: number | null
+  alerts_per_hour: number | null
+  alerts_written_24h: number | null
+  indexer_alert_volume_24h: number | null
+  daemon_health: DaemonHealth[]
+  manager_stats_raw: Record<string, unknown>
+  data_source: string
+  generated_at: string
+}
+
+export async function getDetectionPerformance() {
+  const { data } = await apiClient.get('/validation/performance')
+  return data as DetectionPerformanceResponse
+}
+
+export interface RuleOptimizerEntry {
+  rule_id: string
+  detection_name: string
+  alert_count: number
+  suggestion: string
+}
+
+export interface DuplicateRuleGroup {
+  key: string
+  type: string
+  rule_ids: string[]
+  suggestion: string
+}
+
+export interface RuleOptimizerResponse {
+  never_triggered: RuleOptimizerEntry[]
+  rarely_triggered: RuleOptimizerEntry[]
+  frequently_triggered: RuleOptimizerEntry[]
+  inefficient: RuleOptimizerEntry[]
+  duplicate_groups: DuplicateRuleGroup[]
+  total_rules: number
+  data_source: string
+  generated_at: string
+}
+
+export async function getRuleOptimizer(group = 'goldendome') {
+  const { data } = await apiClient.get('/validation/rule-optimizer', { params: { group } })
+  return data as RuleOptimizerResponse
+}
+
+export interface SocHealthComponents {
+  detection_validation: number
+  attack_coverage: number
+  false_positive_control: number
+  backlog: number
+  platform_performance: number
+}
+
+export interface SocHealthScoreResponse {
+  grade: string
+  overall_score: number
+  components: SocHealthComponents
+  open_alerts: number
+  open_incidents: number
+  data_source: string
+  generated_at: string
+}
+
+export async function getSocHealthScore(group = 'goldendome') {
+  const { data } = await apiClient.get('/validation/health-score', { params: { group } })
+  return data as SocHealthScoreResponse
+}
+
+export interface EvidenceEntry {
+  id: number
+  source: string
+  type: string
+  title: string
+  timestamp: string | null
+  snippet: string
+  rule_id: string | null
+  severity: number | null
+  file_path: string | null
+  raw: string | null
+}
+
+export interface EvidenceSearchResponse {
+  evidence: EvidenceEntry[]
+  query: string | null
+  source: string | null
+  total: number
+  data_source: string
+  generated_at: string
+}
+
+export async function searchEvidence(params?: { q?: string; source?: string; limit?: number }) {
+  const { data } = await apiClient.get('/validation/evidence', { params })
+  return data as EvidenceSearchResponse
+}
+
+export async function downloadValidationReport(group = 'goldendome') {
+  const { data } = await apiClient.get('/validation/reports/pdf', { params: { group }, responseType: 'blob' })
+  const blob = new Blob([data as BlobPart], { type: 'application/pdf' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `validation_report_${new Date().toISOString().slice(0, 10)}.pdf`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 // Detection Rules
 export async function listDetectionRules(params?: { page?: number; limit?: number; category?: string; status?: string; search?: string }) {
   const { data } = await apiClient.get('/detection-rules', { params })
@@ -517,4 +825,125 @@ export async function getSigmaExport(ruleId: number) {
 export async function evaluateDetectionScenarios(ruleId: number, scenarios: { name: string; event: Record<string, unknown>; expected_match: boolean }[]) {
   const { data } = await apiClient.post(`/detection-rules/${ruleId}/evaluate-scenarios`, { scenarios })
   return data as { total_scenarios: number; true_positives: number; false_positives: number; false_negatives: number; precision: number; recall: number; recommendation: string; results: { name: string; expected: boolean; actual: boolean; matched: { matched: boolean; reason: string } }[] }
+}
+
+// ─── Sprint 7 APIs ────────────────────────────────────────────────
+
+// MFA
+export async function enrollMFA() {
+  const { data } = await apiClient.post('/auth/mfa/enroll')
+  return data as { secret: string; qr_uri: string; backup_codes: string[] }
+}
+
+export async function verifyMFA(code: string) {
+  const { data } = await apiClient.post('/auth/mfa/verify', { code })
+  return data as { verified: boolean; message: string }
+}
+
+export async function disableMFA(code: string) {
+  const { data } = await apiClient.post('/auth/mfa/disable', { code })
+  return data as { verified: boolean; message: string }
+}
+
+// Security & API Keys
+export async function getSecurityHeaders() {
+  const { data } = await apiClient.get('/security/headers')
+  return data as { headers: Record<string, string>; cors: Record<string, unknown>; rate_limiting: Record<string, string> }
+}
+
+export async function createApiKey(payload: { name: string; scopes: string[] }) {
+  const { data } = await apiClient.post('/security/api-keys', payload)
+  return data as { key: string; key_prefix: string; name: string; scopes: string[]; message: string }
+}
+
+export async function listApiKeys() {
+  const { data } = await apiClient.get('/security/api-keys')
+  return data as { id: number; key_prefix: string; name: string; scopes: string[]; is_active: boolean; created_at: string | null }[]
+}
+
+export async function revokeApiKey(keyPrefix: string) {
+  await apiClient.delete(`/security/api-keys/${keyPrefix}`)
+}
+
+export async function getSecurityAuditSummary() {
+  const { data } = await apiClient.get('/security/audit-summary')
+  return data as { event_counts: Record<string, number>; failed_logins: number; active_api_keys: number }
+}
+
+// Deployment
+export async function getDeploymentInfo() {
+  const { data } = await apiClient.get('/deployment/info')
+  return data as { app_name: string; version: string; debug: boolean; database: Record<string, string>; redis: Record<string, string>; ollama: Record<string, string>; deployment_type: string; timestamp: string }
+}
+
+export async function getDeploymentHealth() {
+  const { data } = await apiClient.get('/deployment/health-summary')
+  return data as { status: string; checks: Record<string, unknown>; timestamp: string }
+}
+
+export async function createBackup() {
+  const { data } = await apiClient.post('/deployment/backup')
+  return data as { status: string; backup_id: string; metadata: Record<string, unknown>; instructions: string }
+}
+
+// Posture
+export async function getPosture() {
+  const { data } = await apiClient.get('/posture')
+  return data as Record<string, unknown>
+}
+
+// Hotel
+export async function getHotelDashboard() {
+  const { data } = await apiClient.get('/hotel/dashboard')
+  return data as Record<string, unknown>
+}
+
+// Connectors
+export async function listConnectors() {
+  const { data } = await apiClient.get('/connectors')
+  return data as { data: Record<string, unknown>[] }
+}
+
+export async function listConnectorTypes() {
+  const { data } = await apiClient.get('/connectors/catalog')
+  return data as { type: string; category: string; display_name: string; description: string; icon: string | null; config_schema: Record<string, unknown>; supported_actions: string[] }[]
+}
+
+export async function testConnector(id: number) {
+  const { data } = await apiClient.post(`/connectors/${id}/test`)
+  return data as { healthy: boolean; status: string; [key: string]: unknown }
+}
+
+// Onboarding
+export async function getOnboardingSteps() {
+  const { data } = await apiClient.get('/onboarding/wizard/steps')
+  return data as { steps: { id: number; title: string; description: string; fields: string[]; available_connectors?: unknown[] }[] }
+}
+
+export async function runOnboardingWizard(payload: Record<string, unknown>) {
+  const { data } = await apiClient.post('/onboarding/wizard', payload)
+  return data as { organization_id: number; admin_user_id: number; connectors_created: number; assets_created: number; next_steps: string[] }
+}
+
+// Organizations
+export async function listOrganizations() {
+  const { data } = await apiClient.get('/organizations')
+  return data as { data: Record<string, unknown>[] }
+}
+
+// Audit
+export async function listAuditLogs(params?: { page?: number; limit?: number; action?: string }) {
+  const { data } = await apiClient.get('/audit/logs', { params })
+  return data as { data: Record<string, unknown>[]; meta: { page: number; limit: number; total: number } }
+}
+
+// AI Attack Chain & Detection Review
+export async function analyzeAttackChain(alertIds: number[]) {
+  const { data } = await apiClient.post('/ai/attack-chain', { alert_ids: alertIds })
+  return data as Record<string, unknown>
+}
+
+export async function reviewDetection(ruleId?: number) {
+  const { data } = await apiClient.post('/ai/detection-review', { rule_id: ruleId })
+  return data as Record<string, unknown>
 }
