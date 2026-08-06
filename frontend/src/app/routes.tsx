@@ -35,6 +35,7 @@ import { OnboardingWizardPage } from '@/features/onboarding/pages/OnboardingWiza
 import { PosturePage } from '@/features/posture/PosturePage'
 import { HotelSecurityPage } from '@/features/hotel/HotelSecurityPage'
 import { DeploymentPage } from '@/features/deployment/DeploymentPage'
+import { MonitoringDashboard } from '@/features/monitoring/MonitoringDashboard'
 
 export function AppRoutes() {
   return (
@@ -73,6 +74,7 @@ export function AppRoutes() {
         <Route path="posture" element={<PosturePage />} />
         <Route path="hotel-security" element={<HotelSecurityPage />} />
         <Route path="deployment" element={<DeploymentPage />} />
+        <Route path="monitoring" element={<MonitoringDashboard />} />
       </Route>
     </Routes>
   )

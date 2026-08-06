@@ -11,6 +11,7 @@ import {
   Building2,
   ChevronLeft,
   Crosshair,
+  Cpu,
   FileText,
   Filter,
   Gauge,
@@ -70,6 +71,7 @@ const navSections: { label: string; items: { name: string; path: string; icon: t
     label: 'Estate',
     items: [
       { name: 'Assets', path: '/assets', icon: Server },
+      { name: 'Monitoring', path: '/monitoring', icon: Cpu },
       { name: 'Connectors', path: '/connectors', icon: Plug },
       { name: 'SOAR Automation', path: '/soar', icon: Workflow },
       { name: 'Posture', path: '/posture', icon: ShieldCheck },

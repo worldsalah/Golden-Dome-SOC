@@ -914,6 +914,38 @@ export async function testConnector(id: number) {
   return data as { healthy: boolean; status: string; [key: string]: unknown }
 }
 
+// Monitoring
+export async function getServerMetrics() {
+  const { data } = await apiClient.get('/monitoring/server')
+  return data as {
+    cpu_usage: number | null
+    memory_usage: number | null
+    disk_usage: number | null
+    network_in: string | null
+    network_out: string | null
+    uptime: string | null
+    cores: number
+    ram_total: string
+    disk_total: string
+    source: string
+  }
+}
+
+export async function getContainerMetrics() {
+  const { data } = await apiClient.get('/monitoring/containers')
+  return data as { id: string; name: string; status: string; raw_status: string | null; image: string | null; uptime: string | null; cpu: string; memory: string }[]
+}
+
+export async function getMonitoringServiceHealth() {
+  const { data } = await apiClient.get('/monitoring/services')
+  return data as Record<string, 'online' | 'offline' | 'warning' | 'unknown'>
+}
+
+export async function getMetricsHistory(metric: 'cpu' | 'memory' | 'network', range: '1h' | '24h' | '7d') {
+  const { data } = await apiClient.get('/monitoring/history', { params: { metric, range } })
+  return data as { metric: string; range: string; points: { timestamp: number; value: number }[]; available: boolean }
+}
+
 // Onboarding
 export async function getOnboardingSteps() {
   const { data } = await apiClient.get('/onboarding/wizard/steps')

@@ -1,0 +1,73 @@
+# Golden Dome infrastructure monitoring stack.
+#
+# Must be run TOGETHER with the main docker-compose.yml so services join the
+# existing `goldendome` network and can reach the platform's containers:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+#
+x-logging: &default-logging
+  driver: local
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: goldendome-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    networks: [goldendome]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "wget -qO- http://localhost:9090/-/healthy >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: goldendome-node-exporter
+    command:
+      - --path.rootfs=/host
+    volumes:
+      - /:/host:ro,rslave
+    pid: host
+    networks: [goldendome]
+    restart: unless-stopped
+    logging: *default-logging
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: goldendome-cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks: [goldendome]
+    restart: unless-stopped
+    privileged: true
+    logging: *default-logging
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: goldendome-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-goldendome}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-goldendome}?sslmode=disable"
+    networks: [goldendome]
+    restart: unless-stopped
+    logging: *default-logging
+
+volumes:
+  prometheus_data:

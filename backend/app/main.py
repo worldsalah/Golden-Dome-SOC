@@ -10,7 +10,7 @@ from sqlalchemy import text
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.api import ai, alerts, assets, audit, auth, connectors, deployment, detection_rules, discovery, hotel, incidents, mitre, onboarding, organizations, posture, reports, risk, security, soar, system, threat, threat_intel, users, validation, wazuh
+from app.api import ai, alerts, assets, audit, auth, connectors, deployment, detection_rules, discovery, hotel, incidents, mitre, monitoring, onboarding, organizations, posture, reports, risk, security, soar, system, threat, threat_intel, users, validation, wazuh
 from app.config.settings import get_settings
 from app.database.database import AsyncSessionLocal, Base, engine
 from app.utils.logging import setup_logging
@@ -95,6 +95,7 @@ def create_application() -> FastAPI:
     app.include_router(connectors.router, prefix="/api")
     app.include_router(onboarding.router, prefix="/api")
     app.include_router(system.router, prefix="/api")
+    app.include_router(monitoring.router, prefix="/api")
     app.include_router(discovery.router, prefix="/api")
     app.include_router(posture.router, prefix="/api")
     app.include_router(hotel.router, prefix="/api")
