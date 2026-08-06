@@ -17,3 +17,4 @@ __pycache__/
 
 .env.development
 .env.production
+DEV_TEMP_CREDENTIALS.md
