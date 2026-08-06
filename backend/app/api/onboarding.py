@@ -9,9 +9,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import DBDependency, FirstBootOrSuperAdmin, SuperAdminUser
+from app.api.deps import DBDependency, DeploymentWizardAllowed, FirstBootOrSuperAdmin, SuperAdminUser
 from app.config.security import hash_password
-from app.database.models import Asset, AssetType, Connector, Organization, User
+from app.database.models import Asset, AssetType, Connector, DeploymentConfig, Organization, User
+from app.services import system_info
 from app.services.connectors import ConnectorRegistry
 
 logger = logging.getLogger(__name__)
@@ -20,15 +21,110 @@ router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 
 @router.get("/status")
 async def onboarding_status(db: DBDependency):
-    """Return whether the platform needs first-boot setup."""
+    """Return whether the platform needs first-boot deployment setup."""
     from sqlalchemy import func, select
+
+    deployment = (
+        await db.execute(select(DeploymentConfig).where(DeploymentConfig.completed.is_(True)))
+    ).scalar_one_or_none()
     count = (await db.execute(select(func.count(User.id)))).scalar() or 0
     orgs = (await db.execute(select(func.count(Organization.id)))).scalar() or 0
+    completed = deployment is not None
+
     return {
-        "needs_setup": count == 0 and orgs == 0,
+        "completed": completed,
+        "needs_setup": not completed,
         "users_count": count,
         "organizations_count": orgs,
     }
+
+
+class DeploymentWizardPayload(BaseModel):
+    """Payload submitted after the deployment wizard completes."""
+    installation_name: str = Field(..., min_length=2, max_length=255)
+    administrator_name: str = Field(..., min_length=2, max_length=255)
+    administrator_email: str = Field(..., pattern=r"^\S+@\S+\.\S+$")
+    administrator_password: str = Field(..., min_length=8)
+    company_name: str | None = None
+
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, include_in_schema=False)
+async def complete_deployment_wizard(
+    payload: DeploymentWizardPayload,
+    current_user: DeploymentWizardAllowed,
+    db: DBDependency,
+):
+    """Store the deployment configuration and provision the first admin account."""
+    from sqlalchemy import select
+
+    existing = (
+        await db.execute(select(DeploymentConfig).where(DeploymentConfig.completed.is_(True)))
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Deployment already completed")
+
+    snapshot = await system_info.get_full_system_info()
+
+    org = None
+    admin_user = (await db.execute(select(User).where(User.email == payload.administrator_email))).scalar_one_or_none()
+    if not admin_user:
+        slug_base = (payload.company_name or payload.installation_name).lower().replace(" ", "-")
+        slug = "".join(c for c in slug_base if c.isalnum() or c == "-") or "goldendome"
+        org = Organization(
+            name=payload.company_name or payload.installation_name,
+            slug=slug,
+        )
+        db.add(org)
+        await db.flush()
+
+        admin_user = User(
+            username=payload.administrator_name.lower().replace(" ", "."),
+            email=payload.administrator_email,
+            hashed_password=hash_password(payload.administrator_password),
+            role="super_admin",
+            organization_id=org.id,
+        )
+        db.add(admin_user)
+        await db.flush()
+
+    deployment = DeploymentConfig(
+        installation_name=payload.installation_name,
+        administrator_name=payload.administrator_name,
+        company_name=payload.company_name,
+        hostname=snapshot["host"].get("hostname"),
+        local_ip=snapshot["host"].get("local_ip"),
+        public_ip=snapshot["host"].get("public_ip"),
+        operating_system=snapshot["operating_system"].get("distribution"),
+        cpu=snapshot["hardware"].get("cpu_model"),
+        ram=snapshot["hardware"].get("ram_total"),
+        disk=snapshot["hardware"].get("disk_total"),
+        docker_version=snapshot["docker"].get("version"),
+        system_info_snapshot=snapshot,
+        completed=True,
+    )
+    db.add(deployment)
+    await db.commit()
+    await db.refresh(deployment)
+
+    logger.info("Deployment wizard completed: %s", payload.installation_name)
+
+    return {
+        "id": deployment.id,
+        "installation_name": deployment.installation_name,
+        "completed": deployment.completed,
+        "deployment_date": deployment.deployment_date,
+    }
+
+
+@router.post("/reset")
+async def reset_deployment_wizard(current_user: SuperAdminUser, db: DBDependency):
+    """Development endpoint — resets onboarding so the wizard can be tested again."""
+    from sqlalchemy import delete
+
+    await db.execute(delete(DeploymentConfig))
+    await db.commit()
+    return {"reset": True}
 
 
 class OnboardingStep1(BaseModel):

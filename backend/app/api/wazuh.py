@@ -1,10 +1,12 @@
 import logging
+import os
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.deps import AnalystUser
 from app.services.wazuh_service import WazuhService, WazuhServiceError
+from app.services.wazuh import demo_data
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/wazuh", tags=["Wazuh Integration"])
@@ -163,6 +165,8 @@ async def dashboard(
     hours: int = Query(168, ge=1, le=2160),
 ):
     """Live Wazuh dashboard aggregation."""
+    if os.environ.get("GOLDENDOME_DEMO", "false").lower() in ("1", "true", "yes"):
+        return demo_data.FAKE_DASHBOARD
     try:
         return await service.get_dashboard(hours=hours)
     except Exception as exc:
@@ -177,6 +181,8 @@ async def attack_map(
     size: int = Query(200, ge=1, le=1000),
 ):
     """Extract attacker source IPs from Wazuh alerts with GeoIP if available."""
+    if os.environ.get("GOLDENDOME_DEMO", "false").lower() in ("1", "true", "yes"):
+        return demo_data.FAKE_ATTACK_MAP
     try:
         return await service.get_attack_map(hours=hours, size=size)
     except Exception as exc:
@@ -219,6 +225,8 @@ async def latest_alerts(
     size: int = Query(10, ge=1, le=100),
 ):
     """Get latest Wazuh alerts for live notifications."""
+    if os.environ.get("GOLDENDOME_DEMO", "false").lower() in ("1", "true", "yes"):
+        return {"alerts": demo_data.FAKE_LATEST_ALERTS, "total": len(demo_data.FAKE_LATEST_ALERTS)}
     try:
         alerts = await service.get_latest_alerts(size=size)
         return {"alerts": alerts, "total": len(alerts)}

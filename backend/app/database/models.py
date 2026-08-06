@@ -737,3 +737,23 @@ class ApiKey(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=utc_now, nullable=False)
     revoked_at = Column(DateTime, nullable=True)
+
+
+class DeploymentConfig(Base):
+    __tablename__ = "deployment_config"
+
+    id = Column(Integer, primary_key=True, index=True)
+    installation_name = Column(String(255), nullable=False)
+    administrator_name = Column(String(255), nullable=False)
+    company_name = Column(String(255), nullable=True)
+    hostname = Column(String(255), nullable=True)
+    local_ip = Column(String(64), nullable=True)
+    public_ip = Column(String(64), nullable=True)
+    operating_system = Column(String(255), nullable=True)
+    cpu = Column(String(255), nullable=True)
+    ram = Column(String(64), nullable=True)
+    disk = Column(String(64), nullable=True)
+    docker_version = Column(String(64), nullable=True)
+    system_info_snapshot = Column(JSON, nullable=True)
+    deployment_date = Column(DateTime, default=utc_now, nullable=False)
+    completed = Column(Boolean, default=False, nullable=False)

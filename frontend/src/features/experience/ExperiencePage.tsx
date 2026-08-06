@@ -38,7 +38,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { OnboardingWizardPage } from '@/features/onboarding/OnboardingWizardPage'
+import { OnboardingWizardPage } from '@/features/onboarding/pages/OnboardingWizardPage'
 import { ThreatGlobe } from '@/components/ThreatGlobe'
 
 const sectionPadding = 'px-6 md:px-12 lg:px-20'

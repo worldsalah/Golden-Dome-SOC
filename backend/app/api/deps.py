@@ -27,6 +27,25 @@ async def first_boot_allowed(
     return user
 
 FirstBootOrSuperAdmin = Annotated[User | None, Depends(first_boot_allowed)]
+
+async def deployment_wizard_allowed(
+    db: DBDependency,
+    user: CurrentUserOptional,
+) -> User | None:
+    """Allow anonymous access while the deployment wizard hasn't been completed yet."""
+    from sqlalchemy import select
+    from app.database.models import DeploymentConfig
+
+    deployment = (
+        await db.execute(select(DeploymentConfig).where(DeploymentConfig.completed.is_(True)))
+    ).scalar_one_or_none()
+    if deployment is None:
+        return None
+    if not user or _resolve_role(user.role) != Role.SUPER_ADMIN:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Deployment already configured. Authenticate as super admin.")
+    return user
+
+DeploymentWizardAllowed = Annotated[User | None, Depends(deployment_wizard_allowed)]
 SecurityManagerUser = Annotated[User, Depends(require_min_role(Role.SECURITY_MANAGER))]
 AnalystUser = Annotated[User, Depends(require_min_role(Role.ANALYST))]
 ITAdminUser = Annotated[User, Depends(require_min_role(Role.IT_ADMINISTRATOR))]
